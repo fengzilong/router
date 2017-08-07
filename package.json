@@ -1,0 +1,30 @@
+{
+  "name": "router",
+  "version": "0.0.0",
+  "main": "lib/index.js",
+  "scripts": {
+    "lint": "eslint src",
+    "build": "bili",
+    "dev": "bili --watch"
+  },
+  "bili": {
+    "format": [
+      "cjs",
+      "umd",
+      "es"
+    ],
+    "compress": true
+  },
+  "eslintConfig": {
+    "extends": "mo/esnext"
+  },
+  "author": "fengzilong1992@gmail.com",
+  "license": "MIT",
+  "devDependencies": {
+    "dush": "^3.0.5",
+    "eslint": "^3.8.1",
+    "eslint-config-mo": "latest",
+    "fast-memoize": "^2.2.8",
+    "path-to-regexp": "^1.7.0"
+  }
+}

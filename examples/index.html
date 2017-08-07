@@ -1,0 +1,67 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>demo</title>
+	</head>
+	<body>
+		<div id="app">
+			<a href="#/app">a</a>
+			<a href="#/app/detail/1">b</a>
+		</div>
+
+		<script type="text/javascript" src="../dist/router.js"></script>
+		<script type="text/javascript">
+			const r = router( {
+				hooks: {
+					beforeEnter() {
+
+					}
+				},
+				mode: 'hash',
+			} )
+
+			// 编程方法
+
+			const app = r.create( {
+				path: '/app',
+				beforeEnter() {
+					return Promise
+				},
+				enter() {
+
+				},
+				update() {
+
+				},
+				beforeLeave() {
+					return Promise
+				},
+			} )
+
+			const detail = r.create( {
+				path: '/detail/:id',
+				beforeEnter() {
+					return Promise
+				},
+				enter() {
+
+				},
+				update() {
+
+				},
+				beforeLeave() {
+					return Promise
+				},
+			} )
+
+			app.append( detail )
+
+			console.log( app )
+
+			// 每个路由节点都是独立实体，拥有完整方法，可以独立启动
+
+			app.start()
+			// app.stop()
+		</script>
+	</body>
+</html>
