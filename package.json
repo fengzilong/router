@@ -21,6 +21,7 @@
   "author": "fengzilong1992@gmail.com",
   "license": "MIT",
   "devDependencies": {
+    "bili": "^0.17.4",
     "dush": "^3.0.5",
     "eslint": "^3.8.1",
     "eslint-config-mo": "latest",
