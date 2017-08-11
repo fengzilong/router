@@ -1,6 +1,8 @@
-let _;
+import getHash from './getHash'
 
-exports.observe = function ( fn ) {
+let _
+
+export function observe( fn ) {
 	_ = ( e ) => {
 		fn( {
 			newSegment: getHash( e.newURL ),
@@ -11,15 +13,6 @@ exports.observe = function ( fn ) {
 	window.addEventListener( 'hashchange', _ )
 }
 
-exports.unobserve = function () {
+export function unobserve() {
 	window.removeEventListener( 'hashchange', _ )
-}
-
-function getHash( url ) {
-	const index = url.indexOf( '#' )
-	if ( ~index ) {
-		return url.slice( index + 1 )
-	} else {
-		return ''
-	}
 }

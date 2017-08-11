@@ -5,60 +5,104 @@
 	</head>
 	<body>
 		<div id="app">
-			<a href="#/app">a</a>
-			<a href="#/app/detail/1">b</a>
+			<a href="#/app">app</a>
+			<a href="#/app/detail/1">detail</a>
+			<a href="#/app/search">search</a>
 		</div>
 
 		<script type="text/javascript" src="../dist/router.js"></script>
 		<script type="text/javascript">
 			const r = router( {
-				hooks: {
-					beforeEnter() {
-
-					}
-				},
-				mode: 'hash',
+				debug: true,
 			} )
 
-			// 编程方法
+			// r.beforeEach() {
+			//
+			// };
+			// r.afterEach() {
+			//
+			// };
+			// r.notfound() {
+			// go( 'detail', {
+			// 	query: {},
+			// 	params: {}
+			// } )
+			// };
 
 			const app = r.create( {
 				path: '/app',
-				beforeEnter() {
-					return Promise
+				beforeEnter( { next } ) {
+					console.log( '/app beforeEnter' );
+					next();
 				},
 				enter() {
-
+					console.log( '/app enter' );
 				},
 				update() {
-
+					console.log( '/app update' );
+					return new Promise( function ( resolve ) {
+						setTimeout(function () {
+							resolve()
+						}, 1000);
+					} );
 				},
-				beforeLeave() {
-					return Promise
+				beforeLeave( { next } ) {
+					console.log( '/app beforeLeave' );
+					next();
 				},
 			} )
 
 			const detail = r.create( {
 				path: '/detail/:id',
-				beforeEnter() {
-					return Promise
+				beforeEnter( { next } ) {
+					console.log( '/detail beforeEnter' );
+					next( function () {
+						console.log( 'i am delayed until enter' );
+					} )
 				},
 				enter() {
-
+					console.log( '/detail enter' );
 				},
 				update() {
-
+					console.log( '/detail update' );
 				},
-				beforeLeave() {
-					return Promise
+				beforeLeave( { next } ) {
+					console.log( '/detail beforeLeave' );
+					next();
+				},
+			} )
+
+			const search = r.create( {
+				path: '/search',
+				beforeEnter( { next } ) {
+					console.log( '/search beforeEnter' );
+					return new Promise( function (resolve) {
+						setTimeout(function () {
+							resolve();
+						}, 1000);
+					} )
+				},
+				enter() {
+					return new Promise( function (resolve) {
+						setTimeout(function () {
+							console.log( '/search enter' );
+							resolve();
+						}, 1000);
+					} )
+				},
+				update() {
+					console.log( '/search update' );
+				},
+				beforeLeave( { next } ) {
+					console.log( '/search beforeLeave' );
+					next();
 				},
 			} )
 
 			app.append( detail )
+			app.append( search )
 
-			console.log( app )
-
-			// 每个路由节点都是独立实体，拥有完整方法，可以独立启动
+			// 每个路由节点都是独立体系，拥有完整方法，可以独立启动
 
 			app.start()
 			// app.stop()

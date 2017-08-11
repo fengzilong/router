@@ -3,6 +3,8 @@ import pathToRegexp from 'path-to-regexp'
 import memo from './utils/memo'
 import hierarchy from './hierarchy'
 import { observe, unobserve } from './hash/observe'
+import apply from './hash/apply'
+import createDeferred from './deferred'
 
 let counter = 0
 const running = []
@@ -14,49 +16,54 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 	router.use( hierarchy() )
 
 	router.options = options
+	router.isRoot = false
 
 	router.start = function () {
+		const self = this;
+
 		// reset counter
 		counter = 0
 		// stop running routers
-		running.forEach( v => v.stop() )
+		running.forEach( r => r.stop() )
 		running.push( router )
+
+		// for later stopping tracing parents upper than this
+		this.isRoot = true
 
 		this.recursiveInvoke( 'activate' )
 
 		const candidates = []
 
-		// collect data from current router and subrouters
+		// collect router and all subrouters as candidates
 		this.recursive( function ( router ) {
-			candidates.push( {
-				options: options,
-				routerPath: router._routerPath,
-				regexp: router._regexp,
-				name: router.name,
-				fullName: router._fullName,
-				depth: router._depth,
-				keys: router._keys,
-			} )
+			candidates.push( router )
 		} )
 
+		// memo for parse
 		const parse = memo( createParse( candidates ) )
 
-		observe( ( { newSegment, oldSegment } ) => {
-			const result = parse( newSegment )
-			const oldResult = parse( oldSegment )
+		async function observeCallback( { newSegment, oldSegment } ) {
+			const to = parse( newSegment )
+			const from = parse( oldSegment )
 
-			if ( !result ) {
-				return this.emit( 'notfound' )
+			if ( !to ) {
+				return self.emit( 'notfound' )
 			}
 
-			console.log( result )
+			const { ancestors, unmounts, mounts } = diff( { from, to } )
 
-			// phase
-			callHook( result, 'beforeEnter' )
-			callHook( result, 'enter' )
-			callHook( result, 'update' )
-			callHook( result, 'beforeLeave' )
-		} )
+			if (
+				await requestUnmount( unmounts ) &&
+				await requestMount( mounts )
+			) {
+				await unmount( unmounts )
+				await update( ancestors )
+				await mount( mounts )
+			}
+		}
+
+		observe( observeCallback )
+		apply( observeCallback )
 	}
 
 	router.stop = function () {
@@ -65,51 +72,56 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 
 	router.activate = function () {
 		// record depth, for later regexp match comparing
-		if ( this.parent ) {
-			this._depth = this.parent._depth + 1
-		} else {
-			this._depth = 0
+		if ( this.isRoot ) {
+			this.depth = 0
+		} else if ( this.parent && ( typeof this.parent.depth === 'number' ) ) {
+			this.depth = this.parent.depth + 1
 		}
 
 		if ( !options.name ) {
 			this.name = `anonymous${ counter++ }`
 		}
 
-		this._keys = []
-		this._fullName = this._getFullName()
-		this._regexp = pathToRegexp( this._getFullPath(), this._keys )
-		this._routerPath = this._trace()
+		this.keys = []
+		this.fullName = this._getFullName()
+		this.regexp = pathToRegexp( this._getFullPath(), this.keys )
+		this.routerPath = this._trace()
 	}
 
 	router.deactivate = function () {
-		this._depth = 0
-		this._fullName = null
-		this._regexp = null
-		this._routerPath = null
+		this.isRoot = false
+		this.depth = null
+		this.fullName = null
+		this.regexp = null
+		this.routerPath = null
 	}
 
 	router._getFullName = function () {
-		if ( this.parent ) {
-			return this.parent._getFullName() + '.' + this.name
-		} else {
+		if ( this.isRoot ) {
 			return this.name
+		} else if ( this.parent ) {
+			return this.parent._getFullName() + '.' + this.name
 		}
 	}
 
 	router._getFullPath = function () {
-		if ( this.parent ) {
-			return this.parent._getFullPath() + options.path
-		} else {
+		if ( this.isRoot ) {
 			return options.path
+		} else if ( this.parent ) {
+			return this.parent._getFullPath() + options.path
 		}
 	}
 
 	router._trace = function () {
-		const paths = [ this ]
+		const paths = []
 
 		let parent = this
-		while ( parent = parent.parent ) {
+		while ( parent ) {
 			paths.unshift( parent )
+			if ( parent.isRoot ) {
+				break
+			}
+			parent = parent.parent
 		}
 
 		return paths
@@ -125,7 +137,7 @@ function createParse( candidates = [] ) {
 		const matched = match( segment )
 
 		if ( !matched ) {
-			return
+			return null
 		}
 
 		const params = getParams( {
@@ -147,12 +159,12 @@ function createMatch( candidates = [] ) {
 			return candidate.regexp.test( segment )
 		} )
 
-		// find max depth
+		// find the deepest candidate by .depth
 		let maxDepth = 0
 		let bestMatched = matched[ 0 ]
 		matched.forEach( function ( m ) {
-			if ( m._depth > maxDepth ) {
-				maxDepth = m._depth
+			if ( m.depth > maxDepth ) {
+				maxDepth = m.depth
 				bestMatched = m
 			}
 		} )
@@ -182,4 +194,143 @@ function getParams( { segment, regexp, keys } ) {
 	}
 
 	return collected
+}
+
+function diff( { from, to } ) {
+	const fromParents = from ? parents( from ) : []
+	const toParents = to ? parents( to ) : []
+
+	let crossRouter = null;
+	for ( let i = 0, len = fromParents.length; i < len; i++ ) {
+		const fromRouter = fromParents[ i ]
+		const toRouter = toParents[ i ]
+		if ( fromRouter && toRouter && ( fromRouter === toRouter ) ) {
+			crossRouter = fromRouter
+		} else {
+			break
+		}
+	}
+
+	const unmounts = fromParents.slice(
+		~fromParents.indexOf( crossRouter )
+		? fromParents.indexOf( crossRouter ) + 1
+		: 0
+	)
+	const mounts = toParents.slice(
+		~toParents.indexOf( crossRouter )
+		? toParents.indexOf( crossRouter ) + 1
+		: 0
+	)
+
+	return {
+		ancestors: crossRouter ? parents( crossRouter ) : [],
+		unmounts,
+		mounts,
+	};
+}
+
+// reutrn an array contains self and parents
+function parents( router ) {
+	return [ ...( router.routerPath || [] ) ];
+}
+
+ // ===================== //
+ // lifecycles for router //
+ // ===================== //
+
+async function requestUnmount( targets ) {
+	let count = 0
+
+	function createNext( target, resolve ) {
+		return function next( result ) {
+			if ( result !== false ) {
+				resolve()
+			}
+		}
+	}
+
+	for ( const target of targets ) {
+		if ( typeof target.options.beforeLeave === 'function' ) {
+			try {
+				const deferred = createDeferred()
+				const returned = target.options.beforeLeave( {
+					next: createNext( target, deferred.resolve )
+				} )
+				await Promise.race( [ deferred.promise, returned ] )
+				count++
+			} catch( e ) {}
+		} else {
+			count++
+		}
+	}
+
+	return count === targets.length
+}
+
+async function requestMount( targets ) {
+	let count = 0
+
+	function createNext( target, resolve ) {
+		return function next( result ) {
+			if ( result !== false ) {
+				resolve()
+			}
+
+			if ( typeof result === 'function' ) {
+				target._delayedCallbacks.push( result )
+			}
+		}
+	}
+
+	for ( const target of targets ) {
+		// reset beforeEnterCallbacks
+		target._delayedCallbacks = []
+
+		if ( typeof target.options.beforeEnter === 'function' ) {
+			try {
+				const deferred = createDeferred()
+				const returned = target.options.beforeEnter( {
+					next: createNext( target, deferred.resolve )
+				} )
+				await Promise.race( [ deferred.promise, returned ] )
+				count++
+			} catch( e ) {}
+		} else {
+			count++
+		}
+	}
+
+	return count === targets.length
+}
+
+async function unmount( targets ) {
+	for ( const target of targets ) {
+		if ( typeof target.options.leave === 'function' ) {
+			await target.options.leave()
+		}
+	}
+}
+
+async function mount( targets ) {
+	for ( const target of targets ) {
+		// execute delayed callbacks
+		const callbacks = target._delayedCallbacks || []
+		for ( const callback of callbacks ) {
+			if ( typeof callback === 'function' ) {
+				callback()
+			}
+		}
+
+		if ( typeof target.options.enter === 'function' ) {
+			await target.options.enter()
+		}
+	}
+}
+
+async function update( targets ) {
+	for ( const target of targets ) {
+		if ( typeof target.options.update === 'function' ) {
+			await target.options.update()
+		}
+	}
 }

@@ -12,8 +12,7 @@
       "cjs",
       "umd",
       "es"
-    ],
-    "compress": true
+    ]
   },
   "eslintConfig": {
     "extends": "mo/esnext"
@@ -25,6 +24,11 @@
     "dush": "^3.0.5",
     "eslint": "^3.8.1",
     "eslint-config-mo": "latest",
+    "fast-memoize": "^2.2.8",
+    "path-to-regexp": "^1.7.0"
+  },
+  "dependencies": {
+    "dush": "^3.0.5",
     "fast-memoize": "^2.2.8",
     "path-to-regexp": "^1.7.0"
   }
