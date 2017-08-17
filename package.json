@@ -1,6 +1,6 @@
 {
   "name": "unfancy-router",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "main": "dist/unfancy-router.js",
   "scripts": {
     "lint": "eslint src",
