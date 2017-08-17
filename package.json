@@ -1,18 +1,15 @@
 {
-  "name": "router",
+  "name": "unfancy-router",
   "version": "0.0.0",
   "main": "lib/index.js",
   "scripts": {
     "lint": "eslint src",
-    "build": "bili",
-    "dev": "bili --watch"
+    "dist": "bili",
+    "dev": "bili --watch",
+    "prepublish": "npm run dist"
   },
   "bili": {
-    "format": [
-      "cjs",
-      "umd",
-      "es"
-    ]
+    "format": "all"
   },
   "eslintConfig": {
     "extends": "mo/esnext"
