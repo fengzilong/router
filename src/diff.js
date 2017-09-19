@@ -17,13 +17,13 @@ function diff( from, to ) {
 
 	const unmounts = fromParents.slice(
 		~fromParents.indexOf( crossRouter )
-		? fromParents.indexOf( crossRouter ) + 1
-		: 0
+			? fromParents.indexOf( crossRouter ) + 1
+			: 0
 	)
 	const mounts = toParents.slice(
 		~toParents.indexOf( crossRouter )
-		? toParents.indexOf( crossRouter ) + 1
-		: 0
+			? toParents.indexOf( crossRouter ) + 1
+			: 0
 	)
 
 	return {
