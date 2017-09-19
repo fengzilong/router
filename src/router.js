@@ -1,10 +1,11 @@
 import dush from 'dush'
 import pathToRegexp from 'path-to-regexp'
 import memo from './utils/memo'
-import hierarchy from './hierarchy'
+import hierarchy from './utils/hierarchy'
+import createDeferred from './utils/deferred'
 import { observe, unobserve } from './hash/observe'
 import apply from './hash/apply'
-import createDeferred from './deferred'
+import diff from './diff'
 import { requestUnmount, requestMount, mount, unmount, update } from './lifecycle'
 
 let counter = 0
@@ -51,7 +52,7 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 				return self.emit( 'notfound' )
 			}
 
-			const { ancestors, unmounts, mounts } = diff( { from, to } )
+			const { ancestors, unmounts, mounts } = diff( from, to )
 
 			if (
 				await requestUnmount( unmounts ) &&
@@ -142,9 +143,8 @@ function createParse( candidates = [] ) {
 		}
 
 		const params = getParams( {
-			keys: matched.keys,
-			regexp: matched.regexp,
-			segment: segment,
+			...matched,
+			...{ segment }
 		} )
 
 		return {
@@ -195,42 +195,4 @@ function getParams( { segment, regexp, keys } ) {
 	}
 
 	return collected
-}
-
-function diff( { from, to } ) {
-	const fromParents = from ? parents( from ) : []
-	const toParents = to ? parents( to ) : []
-
-	let crossRouter = null;
-	for ( let i = 0, len = fromParents.length; i < len; i++ ) {
-		const fromRouter = fromParents[ i ]
-		const toRouter = toParents[ i ]
-		if ( fromRouter && toRouter && ( fromRouter === toRouter ) ) {
-			crossRouter = fromRouter
-		} else {
-			break
-		}
-	}
-
-	const unmounts = fromParents.slice(
-		~fromParents.indexOf( crossRouter )
-		? fromParents.indexOf( crossRouter ) + 1
-		: 0
-	)
-	const mounts = toParents.slice(
-		~toParents.indexOf( crossRouter )
-		? toParents.indexOf( crossRouter ) + 1
-		: 0
-	)
-
-	return {
-		ancestors: crossRouter ? parents( crossRouter ) : [],
-		unmounts,
-		mounts,
-	};
-}
-
-// reutrn an array contains self and parents
-function parents( router ) {
-	return [ ...( router.routerPath || [] ) ];
 }

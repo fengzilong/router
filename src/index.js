@@ -1,5 +1,5 @@
 import dush from 'dush'
-import factory from './factory'
+import factory from './utils/factory'
 import router from './router'
 
 export default function ( globalOptions = {} ) {
