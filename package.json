@@ -1,12 +1,15 @@
 {
   "name": "unfancy-router",
   "version": "0.0.1",
-  "main": "dist/unfancy-router.js",
+  "main": "dist/unfancy-router.common.js",
+  "module": "dist/unfancy-router.es.js",
+  "unpkg": "dist/unfancy-router.js",
+  "jsdelivr": "dist/unfancy-router.js",
   "scripts": {
     "lint": "eslint src",
     "dist": "bili",
     "dev": "bili --watch",
-    "prepublish": "npm run dist"
+    "prepublishOnly": "npm run dist"
   },
   "bili": {
     "format": "all"
