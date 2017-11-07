@@ -1,3 +1,5 @@
+import createDeferred from './utils/deferred'
+
 export {
 	requestUnmount,
 	requestMount,
@@ -30,7 +32,9 @@ async function requestUnmount( targets ) {
 				} )
 				await Promise.race( [ deferred.promise, returned ] )
 				count++
-			} catch( e ) {}
+			} catch( e ) {
+				console.error( e )
+			}
 		} else {
 			count++
 		}
@@ -66,7 +70,9 @@ async function requestMount( targets ) {
 				} )
 				await Promise.race( [ deferred.promise, returned ] )
 				count++
-			} catch( e ) {}
+			} catch( e ) {
+				console.error( e )
+			}
 		} else {
 			count++
 		}
