@@ -30,7 +30,11 @@ async function requestUnmount( targets ) {
 				const returned = target.options.beforeLeave( {
 					next: createNext( target, deferred.resolve )
 				} )
-				await Promise.race( [ deferred.promise, returned ] )
+				if ( returned instanceof Promise ) {
+					await Promise.race( [ deferred.promise, returned ] )
+				} else {
+					await deferred.promise
+				}
 				count++
 			} catch( e ) {
 				console.error( e )
@@ -68,7 +72,11 @@ async function requestMount( targets ) {
 				const returned = target.options.beforeEnter( {
 					next: createNext( target, deferred.resolve )
 				} )
-				await Promise.race( [ deferred.promise, returned ] )
+				if ( returned instanceof Promise ) {
+					await Promise.race( [ deferred.promise, returned ] )
+				} else {
+					await deferred.promise
+				}
 				count++
 			} catch( e ) {
 				console.error( e )
