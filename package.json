@@ -11,6 +11,7 @@
     "dev": "bili --watch",
     "prepublishOnly": "npm run dist"
   },
+  "files": [ "dist" ],
   "bili": {
     "format": "all"
   },
