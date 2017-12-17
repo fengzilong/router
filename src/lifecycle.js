@@ -27,8 +27,8 @@ async function requestUnmount( targets ) {
 		if ( typeof target.options.beforeLeave === 'function' ) {
 			try {
 				const deferred = createDeferred()
-				const returned = target.options.beforeLeave( {
-					next: createNext( target, deferred.resolve )
+				const returned = target.options.beforeLeave.call( target, {
+					next: createNext( target, deferred.resolve ),
 				} )
 				if ( returned instanceof Promise ) {
 					await Promise.race( [ deferred.promise, returned ] )
@@ -69,8 +69,8 @@ async function requestMount( targets ) {
 		if ( typeof target.options.beforeEnter === 'function' ) {
 			try {
 				const deferred = createDeferred()
-				const returned = target.options.beforeEnter( {
-					next: createNext( target, deferred.resolve )
+				const returned = target.options.beforeEnter.call( target, {
+					next: createNext( target, deferred.resolve ),
 				} )
 				if ( returned instanceof Promise ) {
 					await Promise.race( [ deferred.promise, returned ] )
@@ -92,7 +92,9 @@ async function requestMount( targets ) {
 async function unmount( targets ) {
 	for ( const target of targets ) {
 		if ( typeof target.options.leave === 'function' ) {
-			await target.options.leave()
+			await target.options.leave.call( target, {
+				next: nextStub
+			} )
 		}
 	}
 }
@@ -108,7 +110,9 @@ async function mount( targets ) {
 		}
 
 		if ( typeof target.options.enter === 'function' ) {
-			await target.options.enter()
+			await target.options.enter.call( target, {
+				next: nextStub
+			} )
 		}
 	}
 }
@@ -116,7 +120,13 @@ async function mount( targets ) {
 async function update( targets ) {
 	for ( const target of targets ) {
 		if ( typeof target.options.update === 'function' ) {
-			await target.options.update()
+			await target.options.update.call( target, {
+				next: nextStub
+			} )
 		}
 	}
+}
+
+function nextStub() {
+	console.warn( 'next is only available in beforeEnter and beforeLeave hook' )
 }
