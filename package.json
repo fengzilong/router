@@ -14,9 +14,6 @@
   "files": [
     "dist"
   ],
-  "bili": {
-    "format": "all"
-  },
   "eslintConfig": {
     "extends": "mo/esnext"
   },
