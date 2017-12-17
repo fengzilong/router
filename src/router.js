@@ -2,6 +2,7 @@ import dush from 'dush'
 import pathToRegexp from 'path-to-regexp'
 import memo from './utils/memo'
 import hierarchy from './utils/hierarchy'
+import { removeTailingSlash, ensureLeadingSlash } from './utils/slash'
 import { observe, unobserve } from './hash/observe'
 import apply from './hash/apply'
 import diff from './diff'
@@ -109,7 +110,8 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 		if ( this.isRoot ) {
 			return options.path
 		} else if ( this.parent ) {
-			return this.parent._getFullPath() + options.path
+			return removeTailingSlash( this.parent._getFullPath() ) +
+				ensureLeadingSlash( options.path )
 		}
 	}
 
