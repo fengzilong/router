@@ -12,7 +12,7 @@ export {
 // lifecycles for router //
 // ===================== //
 
-async function requestUnmount( targets ) {
+async function requestUnmount( targets = [], extra = {} ) {
 	let count = 0
 
 	function createNext( target, resolve ) {
@@ -29,6 +29,7 @@ async function requestUnmount( targets ) {
 				const deferred = createDeferred()
 				const returned = target.options.beforeLeave.call( target, {
 					next: createNext( target, deferred.resolve ),
+					...extra,
 				} )
 				if ( returned instanceof Promise ) {
 					await Promise.race( [ deferred.promise, returned ] )
@@ -47,7 +48,7 @@ async function requestUnmount( targets ) {
 	return count === targets.length
 }
 
-async function requestMount( targets ) {
+async function requestMount( targets = [], extra = {} ) {
 	let count = 0
 
 	function createNext( target, resolve ) {
@@ -71,6 +72,7 @@ async function requestMount( targets ) {
 				const deferred = createDeferred()
 				const returned = target.options.beforeEnter.call( target, {
 					next: createNext( target, deferred.resolve ),
+					...extra,
 				} )
 				if ( returned instanceof Promise ) {
 					await Promise.race( [ deferred.promise, returned ] )
@@ -89,17 +91,18 @@ async function requestMount( targets ) {
 	return count === targets.length
 }
 
-async function unmount( targets ) {
+async function unmount( targets = [], extra = {} ) {
 	for ( const target of targets ) {
 		if ( typeof target.options.leave === 'function' ) {
 			await target.options.leave.call( target, {
-				next: nextStub
+				next: nextStub,
+				...extra,
 			} )
 		}
 	}
 }
 
-async function mount( targets ) {
+async function mount( targets = [], extra = {} ) {
 	for ( const target of targets ) {
 		// execute delayed callbacks
 		const callbacks = target._delayedCallbacks || []
@@ -111,17 +114,19 @@ async function mount( targets ) {
 
 		if ( typeof target.options.enter === 'function' ) {
 			await target.options.enter.call( target, {
-				next: nextStub
+				next: nextStub,
+				...extra,
 			} )
 		}
 	}
 }
 
-async function update( targets ) {
+async function update( targets = [], extra = {} ) {
 	for ( const target of targets ) {
 		if ( typeof target.options.update === 'function' ) {
 			await target.options.update.call( target, {
-				next: nextStub
+				next: nextStub,
+				...extra,
 			} )
 		}
 	}

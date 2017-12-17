@@ -48,6 +48,10 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 			const to = parse( newSegment )
 			const from = parse( oldSegment )
 
+			const extra = {
+				params: to.params
+			}
+
 			if ( !to ) {
 				return self.emit( 'notfound' )
 			}
@@ -55,12 +59,12 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 			const { ancestors, unmounts, mounts } = diff( from, to )
 
 			if (
-				await requestUnmount( unmounts ) &&
-				await requestMount( mounts )
+				await requestUnmount( unmounts, extra ) &&
+				await requestMount( mounts, extra )
 			) {
-				await unmount( unmounts )
-				await update( ancestors )
-				await mount( mounts )
+				await unmount( unmounts, extra )
+				await update( ancestors, extra )
+				await mount( mounts, extra )
 			}
 		}
 
@@ -143,6 +147,8 @@ function createParse( candidates = [] ) {
 			return null
 		}
 
+		// use best-matched router to match params,
+		// regexp of standalone router is not accurate against full path
 		const params = getParams( {
 			...matched,
 			...{ segment }
