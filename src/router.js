@@ -48,12 +48,12 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 			const to = parse( newSegment )
 			const from = parse( oldSegment )
 
-			const extra = {
-				params: to.params
-			}
-
 			if ( !to ) {
 				return self.emit( 'notfound' )
+			}
+
+			const extra = {
+				params: to.params
 			}
 
 			const { ancestors, unmounts, mounts } = diff( from, to )

@@ -10,9 +10,9 @@
 			<a href="#/app/search">search</a>
 		</div>
 
-		<script type="text/javascript" src="../dist/router.js"></script>
+		<script type="text/javascript" src="../dist/unfancy-router.js"></script>
 		<script type="text/javascript">
-			const r = router( {
+			const router = unfancyRouter( {
 				debug: true,
 			} )
 
@@ -29,7 +29,7 @@
 			// } )
 			// };
 
-			const app = r.create( {
+			const app = router.create( {
 				path: '/app',
 				beforeEnter( { next } ) {
 					console.log( '/app beforeEnter' );
@@ -52,12 +52,12 @@
 				},
 			} )
 
-			const detail = r.create( {
+			const detail = router.create( {
 				path: '/detail/:id',
 				beforeEnter( { next } ) {
 					console.log( '/detail beforeEnter' );
 					next( function () {
-						console.log( 'i am delayed until enter' );
+						console.log( '/detail enter by next' );
 					} )
 				},
 				enter() {
@@ -66,13 +66,16 @@
 				update() {
 					console.log( '/detail update' );
 				},
+				leave() {
+					console.log( '/detail leave' )
+				},
 				beforeLeave( { next } ) {
 					console.log( '/detail beforeLeave' );
 					next();
 				},
 			} )
 
-			const search = r.create( {
+			const search = router.create( {
 				path: '/search',
 				beforeEnter( { next } ) {
 					console.log( '/search beforeEnter' );
