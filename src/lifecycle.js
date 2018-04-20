@@ -32,7 +32,7 @@ async function requestUnmount( targets = [], extra = {} ) {
 					...extra,
 				} )
 				if ( returned instanceof Promise ) {
-					await Promise.race( [ deferred.promise, returned ] )
+					await returned
 				} else {
 					await deferred.promise
 				}
@@ -75,7 +75,7 @@ async function requestMount( targets = [], extra = {} ) {
 					...extra,
 				} )
 				if ( returned instanceof Promise ) {
-					await Promise.race( [ deferred.promise, returned ] )
+					await returned
 				} else {
 					await deferred.promise
 				}
@@ -104,25 +104,32 @@ async function unmount( targets = [], extra = {} ) {
 
 async function mount( targets = [], extra = {} ) {
 	for ( const target of targets ) {
-		// execute delayed callbacks
-		const callbacks = target._delayedCallbacks || []
-		for ( const callback of callbacks ) {
-			if ( typeof callback === 'function' ) {
-				callback()
-			}
-		}
+		mountOne( target, extra )
+	}
+}
 
-		if ( typeof target.options.enter === 'function' ) {
-			await target.options.enter.call( target, {
-				next: nextStub,
-				...extra,
-			} )
+async function mountOne( target, extra ) {
+	// execute delayed callbacks
+	const callbacks = target._delayedCallbacks || []
+	for ( const callback of callbacks ) {
+		if ( typeof callback === 'function' ) {
+			callback()
 		}
+	}
+
+	if ( typeof target.options.enter === 'function' ) {
+		await target.options.enter.call( target, {
+			next: nextStub,
+			...extra,
+		} )
 	}
 }
 
 async function update( targets = [], extra = {} ) {
 	for ( const target of targets ) {
+		// in most time, we want to execute the `enter` fn again when route update
+		mountOne( target, extra )
+
 		if ( typeof target.options.update === 'function' ) {
 			await target.options.update.call( target, {
 				next: nextStub,

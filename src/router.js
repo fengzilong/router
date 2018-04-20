@@ -1,8 +1,7 @@
 import dush from 'dush'
 import pathToRegexp from 'path-to-regexp'
-import memo from './utils/memo'
-import hierarchy from './utils/hierarchy'
 import { removeTailingSlash, ensureLeadingSlash } from './utils/slash'
+import hierarchy from './hierarchy'
 import { observe, unobserve } from './hash/observe'
 import apply from './hash/apply'
 import diff from './diff'
@@ -14,14 +13,14 @@ const running = []
 export default function createRouter( options = {}, globalOptions = {} ) {
 	const router = dush()
 
-	// +recursiveInvoke && +recursive && +append && +children && +parent
+	// +recursive && +append && +children && +parent
 	router.use( hierarchy() )
 
 	router.options = options
 	router.isRoot = false
 
 	router.start = function () {
-		const self = this;
+		const self = this
 
 		// reset counter
 		counter = 0
@@ -32,17 +31,15 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 		// for later stopping tracing parents upper than this
 		this.isRoot = true
 
-		this.recursiveInvoke( 'activate' )
-
 		const candidates = []
 
 		// collect router and all subrouters as candidates
 		this.recursive( function ( router ) {
+			router.activate()
 			candidates.push( router )
 		} )
 
-		// memo for parse
-		const parse = memo( createParse( candidates ) )
+		const parse = createParse( candidates )
 
 		async function observeCallback( { newSegment, oldSegment } ) {
 			const to = parse( newSegment )
@@ -74,6 +71,9 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 
 	router.stop = function () {
 		unobserve()
+		this.recursive( function ( router ) {
+			router.deactivate()
+		} )
 	}
 
 	router.activate = function () {
@@ -84,7 +84,7 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 			this.depth = this.parent.depth + 1
 		}
 
-		if ( !options.name ) {
+		if ( !this.options.name ) {
 			this.name = `anonymous${ counter++ }`
 		}
 
@@ -92,6 +92,9 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 		this.fullName = this._getFullName()
 		this.regexp = pathToRegexp( this._getFullPath(), this.keys )
 		this.routerPath = this._trace()
+		this.recursive( ins => {
+			ins.active = true
+		} )
 	}
 
 	router.deactivate = function () {
@@ -100,6 +103,24 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 		this.fullName = null
 		this.regexp = null
 		this.routerPath = null
+		this.recursive( ins => {
+			ins.active = false
+		} )
+	}
+
+	// remove from tree
+	router.delete = function () {
+		this.children = []
+
+		const parent = this.parent
+		const children = parent && parent.children
+		if ( parent && children ) {
+			const index = children.indexOf( this )
+			if ( ~index ) {
+				children.splice( index, 1 )
+			}
+		}
+		this.parent = null
 	}
 
 	router._getFullName = function () {
@@ -112,10 +133,10 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 
 	router._getFullPath = function () {
 		if ( this.isRoot ) {
-			return options.path
+			return this.options.path
 		} else if ( this.parent ) {
 			return removeTailingSlash( this.parent._getFullPath() ) +
-				ensureLeadingSlash( options.path )
+				ensureLeadingSlash( this.options.path )
 		}
 	}
 
@@ -163,14 +184,14 @@ function createParse( candidates = [] ) {
 
 function createMatch( candidates = [] ) {
 	return function ( segment ) {
-		const matched = candidates.filter( candidate => {
-			return candidate.regexp.test( segment )
+		const matches = candidates.filter( candidate => {
+			return candidate.active ? candidate.regexp.test( segment ) : false
 		} )
 
 		// find the deepest candidate by .depth
 		let maxDepth = 0
-		let bestMatched = matched[ 0 ]
-		matched.forEach( function ( m ) {
+		let bestMatched = matches[ 0 ]
+		matches.forEach( function ( m ) {
 			if ( m.depth > maxDepth ) {
 				maxDepth = m.depth
 				bestMatched = m
