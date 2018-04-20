@@ -35,5 +35,5 @@ function diff( from, to ) {
 
 // reutrn an array contains self and parents
 function parents( router ) {
-	return [ ...( router.routerPath || [] ) ];
+	return [ ...( router.traces || [] ) ];
 }

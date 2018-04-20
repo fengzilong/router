@@ -91,7 +91,7 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 		this.keys = []
 		this.fullName = this._getFullName()
 		this.regexp = pathToRegexp( this._getFullPath(), this.keys )
-		this.routerPath = this._trace()
+		this.traces = this._trace()
 		this.recursive( ins => {
 			ins.active = true
 		} )
@@ -102,7 +102,7 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 		this.depth = null
 		this.fullName = null
 		this.regexp = null
-		this.routerPath = null
+		this.traces = null
 		this.recursive( ins => {
 			ins.active = false
 		} )
