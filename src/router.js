@@ -10,6 +10,9 @@ import { requestUnmount, requestMount, mount, unmount, update } from './lifecycl
 let counter = 0
 const running = []
 
+// for marking global router changes
+let _mark = 0
+
 export default function createRouter( options = {}, globalOptions = {} ) {
 	const router = dush()
 
@@ -18,7 +21,18 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 
 	router.options = options
 	router.isRoot = false
+	router.beforeEachHooks = []
+	router.afterEachHooks = []
 
+	// for marking changes caused by append and delete
+	router.on( 'append', count )
+	router.on( 'delete', count )
+
+	function count() {
+		_mark = _mark + 1
+	}
+
+	// can not gen fullName before start, because no root is specified
 	router.start = function () {
 		const self = this
 
@@ -31,17 +45,42 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 		// for later stopping tracing parents upper than this
 		this.isRoot = true
 
-		const candidates = []
+		let candidates = []
 
 		// collect router and all subrouters as candidates
 		this.recursive( function ( router ) {
-			router.activate()
+			router.init()
 			candidates.push( router )
 		} )
 
-		const parse = createParse( candidates )
+		let parse = createParse( candidates )
 
 		async function observeCallback( { newSegment, oldSegment } ) {
+			const beforeMark = _mark
+
+			const beforeEachHooks = self.beforeEachHooks || []
+			for ( let i = 0, len = beforeEachHooks.length; i < len; i++ ) {
+				const hook = beforeEachHooks[ i ]
+				try {
+					await hook.call( self )
+				} catch ( e ) {
+					console.log( e )
+				}
+			}
+
+			const afterMark = _mark
+
+			// if change happens, create new parse
+			if ( afterMark > beforeMark ) {
+				candidates = []
+
+				self.recursive( function ( router ) {
+					candidates.push( router )
+				} )
+
+				parse = createParse( candidates )
+			}
+
 			const to = parse( newSegment )
 			const from = parse( oldSegment )
 
@@ -63,6 +102,16 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 				await update( ancestors, extra )
 				await mount( mounts, extra )
 			}
+
+			const afterEachHooks = self.afterEachHooks || []
+			for ( let i = 0, len = afterEachHooks.length; i < len; i++ ) {
+				const hook = afterEachHooks[ i ]
+				try {
+					await hook.call( self )
+				} catch ( e ) {
+					console.log( e )
+				}
+			}
 		}
 
 		observe( observeCallback )
@@ -76,7 +125,41 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 		} )
 	}
 
+	// find by name
+	router.find = function ( fullName ) {
+		let found
+
+		this.recursive( ins => {
+			if ( ins.fullName === fullName ) {
+				found = ins
+			}
+		} )
+
+		return found
+	}
+
+	// before parse segment, we can add new router dynamically here
+	router.beforeEach = function ( hook ) {
+		this.beforeEachHooks.push( hook )
+	}
+
+	router.afterEach = function ( hook ) {
+		this.afterEachHooks.push( hook )
+	}
+
 	router.activate = function () {
+		this.init()
+
+		this.recursive( ins => {
+			ins.active = true
+		} )
+
+		this.emit( 'activate' )
+	}
+
+	router.init = function () {
+		// mark self as active is enough, outside recursive will recursive all
+		this.active = true
 		// record depth, for later regexp match comparing
 		if ( this.isRoot ) {
 			this.depth = 0
@@ -84,17 +167,12 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 			this.depth = this.parent.depth + 1
 		}
 
-		if ( !this.options.name ) {
-			this.name = `anonymous${ counter++ }`
-		}
+		this.name = this.options.name || `anonymous${ counter++ }`
 
 		this.keys = []
 		this.fullName = this._getFullName()
 		this.regexp = pathToRegexp( this._getFullPath(), this.keys )
 		this.traces = this._trace()
-		this.recursive( ins => {
-			ins.active = true
-		} )
 	}
 
 	router.deactivate = function () {
@@ -106,6 +184,7 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 		this.recursive( ins => {
 			ins.active = false
 		} )
+		this.emit( 'deactivate' )
 	}
 
 	// remove from tree
@@ -121,6 +200,8 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 			}
 		}
 		this.parent = null
+
+		this.emit( 'delete' )
 	}
 
 	router._getFullName = function () {

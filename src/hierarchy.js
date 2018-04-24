@@ -4,6 +4,7 @@ export default function ( methods = [] ) {
 			app.children = app.children || []
 			app.children.push( another )
 			another.parent = this
+			this.emit( 'append' )
 		}
 
 		app.recursive = function ( fn ) {

@@ -48,20 +48,20 @@ async function requestUnmount( targets = [], extra = {} ) {
 	return count === targets.length
 }
 
-async function requestMount( targets = [], extra = {} ) {
-	let count = 0
+function createNext( target, resolve ) {
+	return function next( result ) {
+		if ( result !== false ) {
+			resolve()
+		}
 
-	function createNext( target, resolve ) {
-		return function next( result ) {
-			if ( result !== false ) {
-				resolve()
-			}
-
-			if ( typeof result === 'function' ) {
-				target._delayedCallbacks.push( result )
-			}
+		if ( typeof result === 'function' ) {
+			target._delayedCallbacks.push( result )
 		}
 	}
+}
+
+async function requestMount( targets = [], extra = {} ) {
+	let count = 0
 
 	for ( const target of targets ) {
 		// reset beforeEnterCallbacks
