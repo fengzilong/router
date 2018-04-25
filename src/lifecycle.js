@@ -12,23 +12,23 @@ export {
 // lifecycles for router //
 // ===================== //
 
-async function requestUnmount( targets = [], extra = {} ) {
-	let count = 0
-
-	function createNext( target, resolve ) {
-		return function next( result ) {
-			if ( result !== false ) {
-				resolve()
-			}
+function createRequestUnmountNext( target, resolve ) {
+	return function next( result ) {
+		if ( result !== false ) {
+			resolve()
 		}
 	}
+}
+
+async function requestUnmount( targets = [], extra = {} ) {
+	let count = 0
 
 	for ( const target of targets ) {
 		if ( typeof target.options.beforeLeave === 'function' ) {
 			try {
 				const deferred = createDeferred()
 				const returned = target.options.beforeLeave.call( target, {
-					next: createNext( target, deferred.resolve ),
+					next: createRequestUnmountNext( target, deferred.resolve ),
 					...extra,
 				} )
 				if ( returned instanceof Promise ) {
@@ -48,7 +48,7 @@ async function requestUnmount( targets = [], extra = {} ) {
 	return count === targets.length
 }
 
-function createNext( target, resolve ) {
+function createRequestMountNext( target, resolve ) {
 	return function next( result ) {
 		if ( result !== false ) {
 			resolve()
@@ -71,7 +71,7 @@ async function requestMount( targets = [], extra = {} ) {
 			try {
 				const deferred = createDeferred()
 				const returned = target.options.beforeEnter.call( target, {
-					next: createNext( target, deferred.resolve ),
+					next: createRequestMountNext( target, deferred.resolve ),
 					...extra,
 				} )
 				if ( returned instanceof Promise ) {
