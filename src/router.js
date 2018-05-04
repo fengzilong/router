@@ -2,8 +2,7 @@ import dush from 'dush'
 import pathToRegexp from 'path-to-regexp'
 import { removeTailingSlash, ensureLeadingSlash } from './utils/slash'
 import hierarchy from './hierarchy'
-import { observe, unobserve } from './hash/observe'
-import apply from './hash/apply'
+import { observe, unobserve, apply, isObserving, back } from './hash/index'
 import diff from './diff'
 import { requestUnmount, requestMount, mount, unmount, update } from './lifecycle'
 
@@ -55,15 +54,25 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 
 		let parse = createParse( candidates )
 
-		async function observeCallback( { newSegment, oldSegment } ) {
+		async function observeCallback( { newSegment, oldSegment, e } ) {
 			const beforeMark = _mark
+			let isBeforeEachRejected = false
 
 			const beforeEachHooks = self.beforeEachHooks || []
 			for ( let i = 0, len = beforeEachHooks.length; i < len; i++ ) {
 				const hook = beforeEachHooks[ i ]
 				try {
-					await hook.call( self )
+					let result = hook.call( self )
+					if ( result instanceof Promise ) {
+						result = await result
+					}
+
+					// if beforeEach is rejected, restore old url
+					if ( result === false ) {
+						isBeforeEachRejected = true
+					}
 				} catch ( e ) {
+					isBeforeEachRejected = true
 					console.log( e )
 				}
 			}
@@ -79,6 +88,14 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 				} )
 
 				parse = createParse( candidates )
+			}
+
+			if ( isBeforeEachRejected ) {
+				unobserve()
+				// e.oldURL is not available if use `apply`
+				back()
+				observe( observeCallback )
+				return
 			}
 
 			const to = parse( newSegment )
@@ -114,9 +131,31 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 			}
 		}
 
-		observe( observeCallback )
-		apply( observeCallback )
+		// save for apply, unobserve and re-observe
+		this._observeCallback = observeCallback
+
+		this.observe()
+		this.apply()
 	}
+
+	router.apply = function () {
+		if ( !this._observeCallback ) {
+			throw new Error( 'Expect call `start` before `apply`' )
+		}
+		apply( this._observeCallback )
+	}
+
+	router.unobserve = unobserve
+
+	router.observe = function () {
+		if ( !this._observeCallback ) {
+			throw new Error( 'Expect call `start` before `observe`' )
+		}
+
+		observe( this._observeCallback )
+	}
+
+	router.isObserving = isObserving
 
 	router.stop = function () {
 		unobserve()
@@ -176,11 +215,6 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 	}
 
 	router.deactivate = function () {
-		this.isRoot = false
-		this.depth = null
-		this.fullName = null
-		this.regexp = null
-		this.traces = null
 		this.recursive( ins => {
 			ins.active = false
 		} )
@@ -189,6 +223,13 @@ export default function createRouter( options = {}, globalOptions = {} ) {
 
 	// remove from tree
 	router.delete = function () {
+		this.isRoot = false
+		this.depth = null
+		this.fullName = null
+		this.regexp = null
+		this.traces = null
+		this._observeCallback = null
+
 		this.children = []
 
 		const parent = this.parent
