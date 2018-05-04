@@ -4,6 +4,5 @@ import router from './router'
 
 export default function ( globalOptions = {} ) {
   return dush()
-		// +create
-		.use( factory( router, globalOptions ) )
+    .use( factory( router, globalOptions ) ) // +create
 }

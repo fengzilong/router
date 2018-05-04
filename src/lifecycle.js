@@ -1,11 +1,11 @@
 import createDeferred from './utils/deferred'
 
 export {
-	requestUnmount,
-	requestMount,
-	unmount,
-	mount,
-	update
+  requestUnmount,
+  requestMount,
+  unmount,
+  mount,
+  update
 }
 
 // ===================== //
@@ -64,7 +64,7 @@ async function requestMount( targets = [], extra = {} ) {
   let count = 0
 
   for ( const target of targets ) {
-		// reset beforeEnterCallbacks
+    // reset beforeEnterCallbacks
     target._delayedCallbacks = []
 
     if ( typeof target.options.beforeEnter === 'function' ) {
@@ -109,7 +109,7 @@ async function mount( targets = [], extra = {} ) {
 }
 
 async function mountOne( target, extra ) {
-	// execute delayed callbacks
+  // execute delayed callbacks
   const callbacks = target._delayedCallbacks || []
   for ( const callback of callbacks ) {
     if ( typeof callback === 'function' ) {

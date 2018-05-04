@@ -6,7 +6,7 @@ let oldURL = null
 
 export function observe( fn ) {
   _ = e => {
-		// save for back
+    // save for back
     oldURL = e.oldURL
 
     fn( {

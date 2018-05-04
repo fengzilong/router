@@ -8,7 +8,7 @@ export default function () {
     }
 
     app.recursive = function ( fn ) {
-			// save children in advance, fn may delete or reset `children`
+      // save children in advance, fn may delete or reset `children`
       const children = this.children || []
 
       fn( this )

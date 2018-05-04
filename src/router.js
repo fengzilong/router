@@ -17,7 +17,7 @@ let _mark = 0
 export default function createRouter( options = {}, globalOptions = {} ) { // eslint-disable-line
   const router = dush()
 
-	// +recursive && +append && +children && +parent
+  // +recursive && +append && +children && +parent
   router.use( hierarchy() )
 
   router.options = options
@@ -25,7 +25,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
   router.beforeEachHooks = []
   router.afterEachHooks = []
 
-	// for marking changes caused by append and delete
+  // for marking changes caused by append and delete
   router.on( 'append', count )
   router.on( 'delete', count )
 
@@ -33,22 +33,22 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     _mark = _mark + 1
   }
 
-	// can not gen fullName before start, because no root is specified
+  // can not gen fullName before start, because no root is specified
   router.start = function () {
     const self = this
 
-		// reset counter
+    // reset counter
     counter = 0
-		// stop running routers
+    // stop running routers
     running.forEach( r => r.stop() )
     running.push( router )
 
-		// for later stopping tracing parents upper than this
+    // for later stopping tracing parents upper than this
     this.isRoot = true
 
     let candidates = []
 
-		// collect router and all subrouters as candidates
+    // collect router and all subrouters as candidates
     this.recursive( function ( router ) {
       router.init()
       candidates.push( router )
@@ -69,7 +69,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
             result = await result
           }
 
-					// if beforeEach is rejected, restore old url
+          // if beforeEach is rejected, restore old url
           if ( result === false ) {
             isBeforeEachRejected = true
           }
@@ -81,7 +81,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
 
       const afterMark = _mark
 
-			// if change happens, create new parse
+      // if change happens, create new parse
       if ( afterMark > beforeMark ) {
         candidates = []
 
@@ -94,7 +94,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
 
       if ( isBeforeEachRejected ) {
         unobserve()
-				// e.oldURL is not available if use `apply`
+        // e.oldURL is not available if use `apply`
         back()
         observe( observeCallback )
         return
@@ -114,9 +114,9 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
       const { ancestors, unmounts, mounts } = diff( from, to )
 
       if (
-				await requestUnmount( unmounts, extra ) &&
-				await requestMount( mounts, extra )
-			) {
+        await requestUnmount( unmounts, extra ) &&
+        await requestMount( mounts, extra )
+      ) {
         await unmount( unmounts, extra )
         await update( ancestors, extra )
         await mount( mounts, extra )
@@ -133,7 +133,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
       }
     }
 
-		// save for apply, unobserve and re-observe
+    // save for apply, unobserve and re-observe
     this._observeCallback = observeCallback
 
     this.observe()
@@ -166,7 +166,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     } )
   }
 
-	// find by name
+  // find by name
   router.find = function ( fullName ) {
     let found
 
@@ -179,7 +179,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     return found
   }
 
-	// before parse segment, we can add new router dynamically here
+  // before parse segment, we can add new router dynamically here
   router.beforeEach = function ( hook ) {
     this.beforeEachHooks.push( hook )
   }
@@ -199,9 +199,9 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
   }
 
   router.init = function () {
-		// mark self as active is enough, outside recursive will recursive all
+    // mark self as active is enough, outside recursive will recursive all
     this.active = true
-		// record depth, for later regexp match comparing
+    // record depth, for later regexp match comparing
     if ( this.isRoot ) {
       this.depth = 0
     } else if ( this.parent && ( typeof this.parent.depth === 'number' ) ) {
@@ -223,7 +223,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     this.emit( 'deactivate' )
   }
 
-	// remove from tree
+  // remove from tree
   router.delete = function () {
     this.isRoot = false
     this.depth = null
@@ -260,7 +260,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
       return this.options.path
     } else if ( this.parent ) {
       return removeTailingSlash( this.parent._getFullPath() ) +
-				ensureLeadingSlash( this.options.path )
+        ensureLeadingSlash( this.options.path )
     }
   }
 
@@ -292,8 +292,8 @@ function createParse( candidates = [] ) {
       return null
     }
 
-		// use best-matched router to match params,
-		// regexp of standalone router is not accurate against full path
+    // use best-matched router to match params,
+    // regexp of standalone router is not accurate against full path
     const params = getParams( {
       ...matched,
       ...{ segment }
@@ -312,7 +312,7 @@ function createMatch( candidates = [] ) {
       return candidate.active ? candidate.regexp.test( segment ) : false
     } )
 
-		// find the deepest candidate by .depth
+    // find the deepest candidate by .depth
     let maxDepth = 0
     let bestMatched = matches[ 0 ]
     matches.forEach( function ( m ) {
