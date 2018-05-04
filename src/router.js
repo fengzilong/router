@@ -59,22 +59,25 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     async function observeCallback( { newSegment, oldSegment } ) {
       const beforeMark = _mark
       let isBeforeEachRejected = false
+      const stopCallbacks = []
+
+      const stop = function ( callback ) {
+        isBeforeEachRejected = true
+        // cb will executed after backing old url
+        if ( typeof callback === 'function' ) {
+          stopCallbacks.push( callback )
+        }
+      }
 
       const beforeEachHooks = self.beforeEachHooks || []
+
       for ( let i = 0, len = beforeEachHooks.length; i < len; i++ ) {
         const hook = beforeEachHooks[ i ]
         try {
-          let result = hook.call( self )
-          if ( result instanceof Promise ) {
-            result = await result
-          }
-
-          // if beforeEach is rejected, restore old url
-          if ( result === false ) {
-            isBeforeEachRejected = true
-          }
+          let result = await hook.call( self, {
+            stop: stop
+          } )
         } catch ( e ) {
-          isBeforeEachRejected = true
           console.log( e )
         }
       }
@@ -97,6 +100,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
         // e.oldURL is not available if use `apply`
         back()
         observe( observeCallback )
+        stopCallbacks.forEach( callback => callback() )
         return
       }
 
