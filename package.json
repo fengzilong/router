@@ -9,13 +9,27 @@
     "lint": "eslint src",
     "dist": "bili",
     "dev": "bili --watch",
+    "lint": "eslint src --fix",
     "prepublishOnly": "npm run dist"
   },
   "files": [
     "dist"
   ],
   "eslintConfig": {
-    "extends": "mo/esnext"
+    "extends": "mo/esnext",
+    "env": {
+      "browser": true
+    },
+    "rules": {
+      "semi": [
+        "error",
+        "never"
+      ],
+      "indent": [
+        "error",
+        2
+      ]
+    }
   },
   "author": "fengzilong1992@gmail.com",
   "license": "MIT",

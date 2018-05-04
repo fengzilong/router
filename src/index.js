@@ -3,7 +3,7 @@ import factory from './factory'
 import router from './router'
 
 export default function ( globalOptions = {} ) {
-	return dush()
+  return dush()
 		// +create
 		.use( factory( router, globalOptions ) )
 }
