@@ -54,7 +54,9 @@
 
 			const detail = router.create( {
 				path: '/detail/:id',
-				beforeEnter( { next } ) {
+				beforeEnter( { next, from, to } ) {
+          console.log( 'from', from )
+          console.log( 'to', to )
 					console.log( '/detail beforeEnter' );
 					next( function () {
 						console.log( '/detail enter by next' );
@@ -77,7 +79,9 @@
 
 			const search = router.create( {
 				path: '/search',
-				beforeEnter( { next } ) {
+				beforeEnter( { next, from, to } ) {
+          console.log( 'from', from )
+          console.log( 'to', to )
 					console.log( '/search beforeEnter' );
 					return new Promise( function (resolve) {
 						setTimeout(function () {

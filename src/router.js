@@ -112,7 +112,9 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
       }
 
       const extra = {
-        params: to.params
+        from,
+        to,
+        params: to.params,
       }
 
       const { ancestors, unmounts, mounts } = diff( from, to )
@@ -296,16 +298,20 @@ function createParse( candidates = [] ) {
       return null
     }
 
+    const { regexp, keys, traces } = matched
+
     // use best-matched router to match params,
     // regexp of standalone router is not accurate against full path
     const params = getParams( {
-      ...matched,
-      ...{ segment }
+      segment,
+      regexp,
+      keys,
     } )
 
     return {
-      ...matched,
-      ...{ params }
+      segment,
+      traces,
+      params,
     }
   }
 }
