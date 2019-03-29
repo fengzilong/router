@@ -298,7 +298,7 @@ function createParse( candidates = [] ) {
       return null
     }
 
-    const { regexp, keys, traces } = matched
+    const { options = {}, regexp, keys, traces } = matched
 
     // use best-matched router to match params,
     // regexp of standalone router is not accurate against full path
@@ -309,6 +309,7 @@ function createParse( candidates = [] ) {
     } )
 
     return {
+      options,
       segment,
       traces,
       params,
