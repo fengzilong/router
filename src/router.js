@@ -313,6 +313,7 @@ function createParse( candidates = [] ) {
       segment,
       traces,
       params,
+      router: matched,
     }
   }
 }
