@@ -215,10 +215,12 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     }
 
     this.name = this.options.name || `anonymous${ counter++ }`
+    this.fullName = this._getFullName()
 
     this.keys = []
-    this.fullName = this._getFullName()
-    this.regexp = pathToRegexp( this._getFullPath(), this.keys )
+    const fullpath = this._getFullPath()
+    this.regexp = pathToRegexp( fullpath, this.keys )
+    this.toPath = pathToRegexp.compile( fullpath )
     this.traces = this._trace()
   }
 

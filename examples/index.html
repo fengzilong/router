@@ -58,6 +58,7 @@
           console.log( 'from', from )
           console.log( 'to', to )
 					console.log( '/detail beforeEnter' );
+          console.log( 'toPath', to.router.toPath( { id: 123 } ) )
 					next( function () {
 						console.log( '/detail enter by next' );
 					} )
