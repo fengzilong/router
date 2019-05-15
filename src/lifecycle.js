@@ -109,19 +109,20 @@ async function mount( targets = [], extra = {} ) {
 }
 
 async function mountOne( target, extra ) {
-  // execute delayed callbacks
-  const callbacks = target._delayedCallbacks || []
-  for ( const callback of callbacks ) {
-    if ( typeof callback === 'function' ) {
-      callback()
-    }
-  }
-
   if ( typeof target.options.enter === 'function' ) {
     await target.options.enter.call( target, {
       next: nextStub,
       ...extra,
     } )
+  }
+
+  // execute delayed callbacks from next( fn )
+  // at this time, page is mounted, so we can access vm instance in callback
+  const callbacks = target._delayedCallbacks || []
+  for ( const callback of callbacks ) {
+    if ( typeof callback === 'function' ) {
+      callback()
+    }
   }
 }
 
