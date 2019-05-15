@@ -33,20 +33,13 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     _mark = _mark + 1
   }
 
-  // can not gen fullName before start, because no root is specified
-  router.start = function () {
-    const self = this
-
+  router.prepare = function () {
     // reset counter
     counter = 0
-    // stop running routers
-    running.forEach( r => r.stop() )
-    running.push( router )
-
-    // for later stopping tracing parents upper than this
+    // boundary for stopping tracing
     this.isRoot = true
 
-    let candidates = []
+    const candidates = []
 
     // collect router and all subrouters as candidates
     this.recursive( function ( router ) {
@@ -54,7 +47,22 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
       candidates.push( router )
     } )
 
-    let parse = createParse( candidates )
+    this.candidates = candidates
+  }
+
+  // can not gen fullName before start, because no root is specified
+  router.start = function () {
+    const self = this
+
+    // stop running routers
+    running.forEach( r => r.stop() )
+    running.push( router )
+
+    if ( !this.candidates ) {
+      this.prepare()
+    }
+
+    let parse = createParse( this.candidates )
 
     async function observeCallback( { newSegment, oldSegment } ) {
       const beforeMark = _mark
@@ -86,13 +94,13 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
 
       // if change happens, create new parse
       if ( afterMark > beforeMark ) {
-        candidates = []
+        this.candidates = []
 
-        self.recursive( function ( router ) {
-          candidates.push( router )
+        self.recursive( router => {
+          this.candidates.push( router )
         } )
 
-        parse = createParse( candidates )
+        parse = createParse( this.candidates )
       }
 
       if ( isBeforeEachRejected ) {
@@ -233,6 +241,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
 
   // remove from tree
   router.delete = function () {
+    this.candidates = null
     this.isRoot = false
     this.depth = null
     this.fullName = null
