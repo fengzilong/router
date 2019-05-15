@@ -1,6 +1,6 @@
 {
   "name": "unfancy-router",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "main": "dist/unfancy-router.common.js",
   "module": "dist/unfancy-router.es.js",
   "unpkg": "dist/unfancy-router.js",
