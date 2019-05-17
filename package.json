@@ -1,17 +1,18 @@
 {
   "name": "unfancy-router",
   "version": "0.0.17",
-  "main": "dist/unfancy-router.common.js",
-  "module": "dist/unfancy-router.es.js",
-  "unpkg": "dist/unfancy-router.js",
-  "jsdelivr": "dist/unfancy-router.js",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "unpkg": "dist/index.umd.js",
+  "jsdelivr": "dist/index.umd.js",
   "scripts": {
     "lint": "eslint src --fix",
-    "dist": "bili",
+    "build": "bili",
     "dev": "bili --watch",
-    "prepublishOnly": "npm run dist"
+    "prepublishOnly": "npm run build"
   },
   "files": [
+    "src",
     "dist"
   ],
   "eslintConfig": {
@@ -33,12 +34,9 @@
   "author": "fengzilong1992@gmail.com",
   "license": "MIT",
   "devDependencies": {
-    "bili": "^0.17.4",
-    "dush": "^3.0.5",
+    "bili": "^4.8.0",
     "eslint": "^3.8.1",
-    "eslint-config-mo": "latest",
-    "fast-memoize": "^2.2.8",
-    "path-to-regexp": "^1.7.0"
+    "eslint-config-mo": "latest"
   },
   "dependencies": {
     "dush": "^3.0.5",

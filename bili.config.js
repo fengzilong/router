@@ -1,8 +1,19 @@
 module.exports = {
-  format: 'all',
-  buble: {
-    async: true
+  babel: {
+    asyncToPromises: true,
+    minimal: true,
   },
-  esModules: true,
-  map: true
+
+  output: {
+    moduleName: 'unfancyRouter',
+    format: [ 'esm', 'cjs', 'umd' ],
+    sourceMap: true,
+  },
+
+  banner: {
+    author: 'fengzilong1992@gmail.com',
+    license: 'MIT',
+    version: require( './package.json' ).version,
+    name: 'unfancy-router',
+  },
 }
