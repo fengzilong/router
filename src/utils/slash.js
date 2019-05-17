@@ -5,3 +5,7 @@ export function removeTailingSlash( path ) {
 export function ensureLeadingSlash( path ) {
   return path.replace( /^\/*/, '/' )
 }
+
+export function removeLeadingSlash( path ) {
+  return path.replace( /^\/*/, '' )
+}

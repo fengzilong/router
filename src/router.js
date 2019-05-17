@@ -1,12 +1,20 @@
 import dush from 'dush'
+import qs from 'query-string'
 import pathToRegexp from 'path-to-regexp'
 import { removeTailingSlash, ensureLeadingSlash } from './utils/slash'
 import hierarchy from './hierarchy'
-import { observe, unobserve, apply, isObserving, back } from './hash/index'
+import hash from './mode/hash'
+import history from './mode/history'
 import diff from './diff'
 import {
   requestUnmount, requestMount, mount, unmount, update
 } from './lifecycle'
+
+// implement { observe, unobserve, apply, isObserving, back, getSegment, push, replace }
+const modes = {
+  hash,
+  // history,
+}
 
 let counter = 0
 const running = []
@@ -21,11 +29,12 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
   router.use( hierarchy() )
 
   router.options = options
+  router.globalOptions = globalOptions
   router.isRoot = false
   router.beforeEachHooks = []
   router.afterEachHooks = []
 
-  // for marking changes caused by append and delete
+  // mark changes by append and delete
   router.on( 'append', count )
   router.on( 'delete', count )
 
@@ -41,142 +50,205 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
 
     const candidates = []
 
-    // collect router and all subrouters as candidates
+    // collect router and all sub-routers as candidates
     this.recursive( function ( router ) {
       router.init()
       candidates.push( router )
     } )
 
-    this.candidates = candidates
+    this.parse = createParse( candidates )
   }
 
-  // can not gen fullName before start, because no root is specified
   router.start = function () {
     const self = this
 
-    // stop running routers
+    // stop old running routers
     running.forEach( r => r.stop() )
     running.push( router )
 
-    if ( !this.candidates ) {
+    if ( !this.parse ) {
       this.prepare()
     }
 
-    let parse = createParse( this.candidates )
-
-    async function observeCallback( { newSegment, oldSegment } ) {
-      const beforeMark = _mark
-      let isBeforeEachRejected = false
-      const stopCallbacks = []
-
-      const stop = function ( callback ) {
-        isBeforeEachRejected = true
-        // cb will executed after backing old url
-        if ( typeof callback === 'function' ) {
-          stopCallbacks.push( callback )
-        }
-      }
-
-      const beforeEachHooks = self.beforeEachHooks || []
-
-      for ( let i = 0, len = beforeEachHooks.length; i < len; i++ ) {
-        const hook = beforeEachHooks[ i ]
-        try {
-          let result = await hook.call( self, {
-            stop: stop
-          } )
-        } catch ( e ) {
-          console.log( e )
-        }
-      }
-
-      const afterMark = _mark
-
-      // if change happens, create new parse
-      if ( afterMark > beforeMark ) {
-        this.candidates = []
-
-        self.recursive( router => {
-          this.candidates.push( router )
-        } )
-
-        parse = createParse( this.candidates )
-      }
-
-      if ( isBeforeEachRejected ) {
-        unobserve()
-        // e.oldURL is not available if use `apply`
-        back()
-        observe( observeCallback )
-        stopCallbacks.forEach( callback => callback() )
-        return
-      }
-
-      const to = parse( newSegment )
-      const from = parse( oldSegment )
-
-      if ( !to ) {
-        return self.emit( 'notfound' )
-      }
-
-      const extra = {
-        from,
-        to,
-        params: to.params,
-      }
-
-      const { ancestors, unmounts, mounts } = diff( from, to )
-
-      if (
-        await requestUnmount( unmounts, extra ) &&
-        await requestMount( mounts, extra )
-      ) {
-        await unmount( unmounts, extra )
-        await update( ancestors, extra )
-        await mount( mounts, extra )
-      }
-
-      const afterEachHooks = self.afterEachHooks || []
-      for ( let i = 0, len = afterEachHooks.length; i < len; i++ ) {
-        const hook = afterEachHooks[ i ]
-        try {
-          await hook.call( self )
-        } catch ( e ) {
-          console.log( e )
-        }
-      }
-    }
-
-    // save for apply, unobserve and re-observe
-    this._observeCallback = observeCallback
-
+    const mode = globalOptions.mode || 'hash'
+    this.observer = new modes[ mode ]( globalOptions )
     this.observe()
     this.apply()
   }
+
+  async function _observeCallback( { newSegment, oldSegment, inMemory, ifAllowed } ) {
+    const beforeMark = _mark
+    let isBeforeEachRejected = false
+    const stopCallbacks = []
+
+    const stop = function ( callback ) {
+      isBeforeEachRejected = true
+      // cb will executed after backing old url
+      if ( typeof callback === 'function' ) {
+        stopCallbacks.push( callback )
+      }
+    }
+
+    const beforeEachHooks = this.beforeEachHooks || []
+
+    for ( let i = 0, len = beforeEachHooks.length; i < len; i++ ) {
+      const hook = beforeEachHooks[ i ]
+      try {
+        let result = await hook.call( this, {
+          stop: stop
+        } )
+      } catch ( e ) {
+        console.log( e )
+      }
+    }
+
+    const afterMark = _mark
+
+    // if change happens, create new parse
+    if ( afterMark > beforeMark ) {
+      const candidates = []
+
+      this.recursive( router => {
+        candidates.push( router )
+      } )
+
+      this.parse = createParse( candidates )
+    }
+
+    if ( isBeforeEachRejected ) {
+      this.unobserve()
+      // e.oldURL is not available if use `apply`
+      this.observer.back()
+      this.observe()
+      stopCallbacks.forEach( callback => callback() )
+      return
+    }
+
+    const to = this.parse( newSegment )
+    const from = this.parse( oldSegment )
+
+    if ( !to ) {
+      return this.emit( 'notfound' )
+    }
+
+    const extra = {
+      from,
+      to,
+      params: to.params,
+    }
+
+    const { ancestors, unmounts, mounts } = diff( from, to )
+
+    if (
+      await requestUnmount( unmounts, extra ) &&
+      await requestMount( mounts, extra )
+    ) {
+      if ( ifAllowed ) {
+        await ifAllowed()
+      }
+      await unmount( unmounts, extra )
+      await update( ancestors, extra )
+      await mount( mounts, extra )
+    }
+
+    const afterEachHooks = this.afterEachHooks || []
+    for ( let i = 0, len = afterEachHooks.length; i < len; i++ ) {
+      const hook = afterEachHooks[ i ]
+      try {
+        await hook.call( this )
+      } catch ( e ) {
+        console.log( e )
+      }
+    }
+  }
+
+  router._observeCallback = _observeCallback.bind( router )
 
   router.apply = function () {
     if ( !this._observeCallback ) {
       throw new Error( 'Expect call `start` before `apply`' )
     }
-    apply( this._observeCallback )
+    this.observer.apply( this._observeCallback )
   }
-
-  router.unobserve = unobserve
 
   router.observe = function () {
-    if ( !this._observeCallback ) {
-      throw new Error( 'Expect call `start` before `observe`' )
-    }
-
-    observe( this._observeCallback )
+    this.observer.observe( this._observeCallback )
   }
 
-  router.isObserving = isObserving
+  router.unobserve = function () {
+    this.observer.unobserve()
+  }
+
+  router.isObserving = function () {
+    return this.observer.isObserving()
+  }
 
   router.stop = function () {
-    unobserve()
+    this.unobserve()
     this.recursive( function ( router ) {
       router.deactivate()
+    } )
+  }
+
+  async function routeTo( route = '', fn ) {
+    const pathPrefix = this.globalOptions.pathPrefix || ''
+
+    let path = '/'
+
+    if ( route && ( typeof route === 'object' ) ) {
+      const { name, params = {}, query } = route
+
+      const target = this.find( name )
+
+      if ( target ) {
+        if ( !target.toPath ) {
+          this.prepare()
+        }
+
+        path = target.toPath( params )
+
+        if ( query ) {
+          path = path + '?' +qs.stringify( query )
+        }
+
+        path = ensureLeadingSlash( path )
+      }
+    } else if ( typeof route === 'string' ) {
+      path = path + removeLeadingSlash( route )
+    }
+
+    await this._observeCallback( {
+      oldSegment: this.observer.getSegment(),
+      newSegment: path,
+      inMemory: true,
+      ifAllowed: () => {
+        // check old segment match
+        this.unobserve()
+
+        let finalPath = path
+
+        if ( this.globalOptions.mode === 'history' ) {
+          finalPath = removeTailingSlash( ensureLeadingSlash( pathPrefix ) ) +
+            '/' +
+            removeLeadingSlash( path )
+        }
+
+        fn( finalPath )
+
+        this.observe()
+      },
+    } )
+  }
+
+  router.push = function ( route ) {
+    return routeTo.call( this, route, path => {
+      this.observer.push( path )
+    } )
+  }
+
+  router.replace = function ( route ) {
+    return routeTo.call( this, route, path => {
+      this.observer.replace( path )
     } )
   }
 
@@ -215,7 +287,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
   router.init = function () {
     // mark self as active is enough, outside recursive will recursive all
     this.active = true
-    // record depth, for later regexp match comparing
+    // save depth, for comparing match
     if ( this.isRoot ) {
       this.depth = 0
     } else if ( this.parent && ( typeof this.parent.depth === 'number' ) ) {
@@ -241,14 +313,13 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
 
   // remove from tree
   router.delete = function () {
-    this.candidates = null
+    this.parse = null
     this.isRoot = false
     this.depth = null
     this.fullName = null
     this.regexp = null
     this.traces = null
     this._observeCallback = null
-
     this.children = []
 
     const parent = this.parent

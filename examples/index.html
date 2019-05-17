@@ -5,15 +5,26 @@
 	</head>
 	<body>
 		<div id="app">
-			<a href="#/app">app</a>
-			<a href="#/app/detail/1">detail</a>
-			<a href="#/app/search">search</a>
+			<div>
+        <a href="#/app">app</a>
+  			<a href="#/app/detail/1">detail</a>
+  			<a href="#/app/search">search</a>
+        <button onclick="push()">push</button>
+      </div>
+      <div>
+        <button onclick="push2('/app')">app</button>
+  			<a href="/app/detail/1">detail</a>
+  			<a href="/app/search">search</a>
+        <button onclick="push()">push</button>
+      </div>
 		</div>
 
 		<script type="text/javascript" src="../dist/unfancy-router.js"></script>
 		<script type="text/javascript">
 			const router = unfancyRouter( {
 				debug: true,
+        // mode: 'history',
+        pathPrefix: '/app'
 			} )
 
 			// r.beforeEach() {
@@ -30,6 +41,7 @@
 			// };
 
 			const app = router.create( {
+        name: 'app',
 				path: '/app',
 				beforeEnter( { next } ) {
 					console.log( '/app beforeEnter' );
@@ -53,6 +65,7 @@
 			} )
 
 			const detail = router.create( {
+        name: 'detail',
 				path: '/detail/:id',
 				beforeEnter( { next, from, to } ) {
           console.log( 'from', from )
@@ -79,6 +92,7 @@
 			} )
 
 			const search = router.create( {
+        name: 'search',
 				path: '/search',
 				beforeEnter( { next, from, to } ) {
           console.log( 'from', from )
@@ -114,6 +128,16 @@
 
 			app.start()
 			// app.stop()
+
+      function push() {
+        app.replace( {
+          name: 'app.search'
+        } )
+      }
+
+      function push2( path ) {
+        history.pushState( '', '', path )
+      }
 		</script>
 	</body>
 </html>
