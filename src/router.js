@@ -43,6 +43,9 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
   }
 
   router.prepare = function () {
+    const mode = globalOptions.mode || 'hash'
+    this.observer = new modes[ mode ]( globalOptions )
+
     // reset counter
     counter = 0
     // boundary for stopping tracing
@@ -70,8 +73,6 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
       this.prepare()
     }
 
-    const mode = globalOptions.mode || 'hash'
-    this.observer = new modes[ mode ]( globalOptions )
     this.observe()
     this.apply()
   }
