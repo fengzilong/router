@@ -27,9 +27,6 @@
         pathPrefix: '/app'
 			} )
 
-			// r.beforeEach() {
-			//
-			// };
 			// r.afterEach() {
 			//
 			// };
@@ -62,6 +59,10 @@
 					console.log( '/app beforeLeave' );
 					next();
 				},
+			} )
+
+      app.beforeEach( e => {
+        console.log( 'beforeEach', e )
 			} )
 
 			const detail = router.create( {

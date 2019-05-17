@@ -82,6 +82,9 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     let isBeforeEachRejected = false
     const stopCallbacks = []
 
+    let from = this.parse( oldSegment )
+    let to = this.parse( newSegment )
+
     const stop = function ( callback ) {
       isBeforeEachRejected = true
       // cb will executed after backing old url
@@ -95,8 +98,10 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     for ( let i = 0, len = beforeEachHooks.length; i < len; i++ ) {
       const hook = beforeEachHooks[ i ]
       try {
-        let result = await hook.call( this, {
-          stop: stop
+        await hook.call( this, {
+          stop,
+          from,
+          to,
         } )
       } catch ( e ) {
         console.log( e )
@@ -114,6 +119,10 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
       } )
 
       this.parse = createParse( candidates )
+
+      // re-parse
+      from = this.parse( oldSegment )
+      to = this.parse( newSegment )
     }
 
     if ( isBeforeEachRejected ) {
@@ -124,9 +133,6 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
       stopCallbacks.forEach( callback => callback() )
       return
     }
-
-    const to = this.parse( newSegment )
-    const from = this.parse( oldSegment )
 
     if ( !to ) {
       return this.emit( 'notfound' )
@@ -156,7 +162,10 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     for ( let i = 0, len = afterEachHooks.length; i < len; i++ ) {
       const hook = afterEachHooks[ i ]
       try {
-        await hook.call( this )
+        await hook.call( this, {
+          from,
+          to,
+        } )
       } catch ( e ) {
         console.log( e )
       }
