@@ -1,7 +1,7 @@
 import dush from 'dush'
 import qs from 'query-string'
 import pathToRegexp from 'path-to-regexp'
-import { removeTailingSlash, ensureLeadingSlash } from './utils/slash'
+import { removeTailingSlash, ensureLeadingSlash, removeLeadingSlash } from './utils/slash'
 import hierarchy from './hierarchy'
 import hash from './mode/hash'
 import history from './mode/history'
