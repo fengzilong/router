@@ -79,18 +79,17 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
 
   async function _observeCallback( { newSegment, oldSegment, inMemory, ifAllowed } ) {
     const beforeMark = _mark
-    let isBeforeEachRejected = false
-    const stopCallbacks = []
 
     let from = this.parse( oldSegment )
     let to = this.parse( newSegment )
 
-    const stop = function ( callback ) {
-      isBeforeEachRejected = true
-      // cb will executed after backing old url
-      if ( typeof callback === 'function' ) {
-        stopCallbacks.push( callback )
+    let rejectCount = this.beforeEachHooks.length
+    const next = function ( result ) {
+      if ( result === false ) {
+        return
       }
+
+      rejectCount = rejectCount - 1
     }
 
     const beforeEachHooks = this.beforeEachHooks || []
@@ -99,7 +98,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
       const hook = beforeEachHooks[ i ]
       try {
         await hook.call( this, {
-          stop,
+          next,
           from,
           to,
         } )
@@ -125,12 +124,9 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
       to = this.parse( newSegment )
     }
 
-    if ( isBeforeEachRejected ) {
-      this.unobserve()
-      // e.oldURL is not available if use `apply`
-      this.observer.back()
-      this.observe()
-      stopCallbacks.forEach( callback => callback() )
+    // TODO: log which hook reject invoking next
+    // defaults to in-memory routing, so call push/replace manually to trigger
+    if ( rejectCount > 0 ) {
       return
     }
 
@@ -175,9 +171,6 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
   router._observeCallback = _observeCallback.bind( router )
 
   router.apply = function () {
-    if ( !this._observeCallback ) {
-      throw new Error( 'Expect call `start` before `apply`' )
-    }
     this.observer.apply( this._observeCallback )
   }
 
@@ -330,7 +323,9 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     this.regexp = null
     this.traces = null
     this._observeCallback = null
-    this.children = []
+    this.children = null
+    this.beforeEachHooks = null
+    this.afterEachHooks = null
 
     const parent = this.parent
     const children = parent && parent.children

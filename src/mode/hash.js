@@ -6,6 +6,7 @@ export default class HashHistory {
     this.listener = null
   }
 
+  // observe is used to listen for back triggered by user
   observe( callback ) {
     if ( this.observing ) {
       return

@@ -1,134 +1,140 @@
 <html>
-	<head>
-		<meta charset="utf-8">
-		<title>demo</title>
-	</head>
-	<body>
-		<div id="app">
-			<div>
+  <head>
+    <meta charset="utf-8">
+    <title>demo</title>
+  </head>
+  <body>
+    <div id="app">
+      <div>
         <a href="#/app">app</a>
-  			<a href="#/app/detail/1">detail</a>
-  			<a href="#/app/search">search</a>
+        <a href="#/app/detail/1">detail</a>
+        <a href="#/app/search">search</a>
         <button onclick="push()">push</button>
       </div>
       <div>
         <button onclick="push2('/app')">app</button>
-  			<a href="/app/detail/1">detail</a>
-  			<a href="/app/search">search</a>
+        <a href="/app/detail/1">detail</a>
+        <a href="/app/search">search</a>
         <button onclick="push()">push</button>
       </div>
-		</div>
+    </div>
 
-		<script type="text/javascript" src="../dist/index.umd.js"></script>
-		<script type="text/javascript">
-			const router = unfancyRouter( {
-				debug: true,
+    <script type="text/javascript" src="../dist/index.umd.js"></script>
+    <script type="text/javascript">
+      const router = unfancyRouter( {
+        debug: true,
         // mode: 'history',
         pathPrefix: '/app'
-			} )
+      } )
 
-			// r.afterEach() {
-			//
-			// };
-			// r.notfound() {
-			// go( 'detail', {
-			// 	query: {},
-			// 	params: {}
-			// } )
-			// };
+      // r.afterEach() {
+      //
+      // };
+      // r.notfound() {
+      // go( 'detail', {
+      //   query: {},
+      //   params: {}
+      // } )
+      // };
 
-			const app = router.create( {
+      const app = router.create( {
         name: 'app',
-				path: '/app',
-				beforeEnter( { next } ) {
-					console.log( '/app beforeEnter' );
-					next();
-				},
-				enter() {
-					console.log( '/app enter' );
-				},
-				update() {
-					console.log( '/app update' );
-					return new Promise( function ( resolve ) {
-						setTimeout(function () {
-							resolve()
-						}, 1000);
-					} );
-				},
-				beforeLeave( { next } ) {
-					console.log( '/app beforeLeave' );
-					next();
-				},
-			} )
+        path: '/app',
+        beforeEnter( { next } ) {
+          console.log( '/app beforeEnter' );
+          next();
+        },
+        enter() {
+          console.log( '/app enter' );
+        },
+        update() {
+          console.log( '/app update' );
+          return new Promise( function ( resolve ) {
+            setTimeout(function () {
+              resolve()
+            }, 1000);
+          } );
+        },
+        beforeLeave( { next } ) {
+          console.log( '/app beforeLeave' );
+          next();
+        },
+      } )
 
-      app.beforeEach( e => {
-        console.log( 'beforeEach', e )
-			} )
-
-			const detail = router.create( {
+      const detail = router.create( {
         name: 'detail',
-				path: '/detail/:id',
-				beforeEnter( { next, from, to } ) {
+        path: '/detail/:id',
+        beforeEnter( { next, from, to } ) {
           console.log( 'from', from )
           console.log( 'to', to )
-					console.log( '/detail beforeEnter' );
+          console.log( '/detail beforeEnter' );
           console.log( 'toPath', to.router.toPath( { id: 123 } ) )
-					next( function () {
-						console.log( '/detail enter by next' );
-					} )
-				},
-				enter() {
-					console.log( '/detail enter' );
-				},
-				update() {
-					console.log( '/detail update' );
-				},
-				leave() {
-					console.log( '/detail leave' )
-				},
-				beforeLeave( { next } ) {
-					console.log( '/detail beforeLeave' );
-					next();
-				},
-			} )
+          next( function () {
+            console.log( '/detail enter by next' );
+          } )
+        },
+        enter() {
+          console.log( '/detail enter' );
+        },
+        update() {
+          console.log( '/detail update' );
+        },
+        leave() {
+          console.log( '/detail leave' )
+        },
+        beforeLeave( { next } ) {
+          console.log( '/detail beforeLeave' );
+          next();
+        },
+      } )
 
-			const search = router.create( {
+      const search = router.create( {
         name: 'search',
-				path: '/search',
-				beforeEnter( { next, from, to } ) {
+        path: '/search',
+        beforeEnter( { next, from, to } ) {
           console.log( 'from', from )
           console.log( 'to', to )
-					console.log( '/search beforeEnter' );
-					return new Promise( function (resolve) {
-						setTimeout(function () {
-							resolve();
-						}, 1000);
-					} )
-				},
-				enter() {
-					return new Promise( function (resolve) {
-						setTimeout(function () {
-							console.log( '/search enter' );
-							resolve();
-						}, 1000);
-					} )
-				},
-				update() {
-					console.log( '/search update' );
-				},
-				beforeLeave( { next } ) {
-					console.log( '/search beforeLeave' );
-					next();
-				},
-			} )
+          console.log( '/search beforeEnter' );
+          return new Promise( function (resolve) {
+            setTimeout(function () {
+              resolve();
+            }, 1000);
+          } )
+        },
+        enter() {
+          return new Promise( function (resolve) {
+            setTimeout(function () {
+              console.log( '/search enter' );
+              resolve();
+            }, 1000);
+          } )
+        },
+        update() {
+          console.log( '/search update' );
+        },
+        beforeLeave( { next } ) {
+          console.log( '/search beforeLeave' );
+          next();
+        },
+      } )
 
-			app.append( detail )
-			app.append( search )
+      app.append( detail )
+      app.append( search )
 
-			// 每个路由节点都是独立体系，拥有完整方法，可以独立启动
+      // 每个路由节点独立，拥有完整方法，可以独立启动
 
-			app.start()
-			// app.stop()
+      app.beforeEach( ( { from, to, next } ) => {
+        console.log( 'before each' )
+        next()
+      } )
+
+      app.beforeEach( ( { from, to, next } ) => {
+        console.log( 'before each' )
+        next()
+      } )
+
+      app.start()
+      // app.stop()
 
       function push() {
         app.replace( {
@@ -139,6 +145,6 @@
       function push2( path ) {
         history.pushState( '', '', path )
       }
-		</script>
-	</body>
+    </script>
+  </body>
 </html>
