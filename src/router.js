@@ -21,6 +21,8 @@ const running = []
 
 // for marking global router changes
 let _mark = 0
+// for marking alias invoking
+let shouldRegenerateParse = false
 
 export default function createRouter( options = {}, globalOptions = {} ) { // eslint-disable-line
   const router = dush()
@@ -60,6 +62,9 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     } )
 
     this.parse = createParse( candidates )
+
+    // reset
+    shouldRegenerateParse = false
   }
 
   router.start = function () {
@@ -110,18 +115,21 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     const afterMark = _mark
 
     // if change happens, create new parse
-    if ( afterMark > beforeMark ) {
+    if ( ( afterMark > beforeMark ) || shouldRegenerateParse ) {
       const candidates = []
 
       this.recursive( router => {
         candidates.push( router )
       } )
 
+      // regenerate parse
       this.parse = createParse( candidates )
 
       // re-parse
       from = this.parse( oldSegment )
       to = this.parse( newSegment )
+
+      shouldRegenerateParse = false
     }
 
     // TODO: log which hook reject invoking next
@@ -191,6 +199,12 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     this.recursive( function ( router ) {
       router.deactivate()
     } )
+  }
+
+  router._alias = []
+  router.alias = function ( path ) {
+    shouldRegenerateParse = true
+    this._alias.push( path )
   }
 
   async function routeTo( route = '', fn ) {
@@ -377,15 +391,52 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
 
 function createParse( candidates = [] ) {
   const match = createMatch( candidates )
+  const alias = []
+
+  candidates.forEach( candidate => {
+    if ( candidate._alias && ( candidate._alias.length > 0 ) ) {
+      candidate._alias.forEach( path => {
+        const keys = []
+        alias.push( {
+          regexp: pathToRegexp( path, keys ),
+          keys,
+          router: candidate,
+        } )
+      } )
+    }
+  } )
 
   return function ( segment ) {
-    const matched = match( segment )
+    let matched
+    let regexp
+    let keys
+
+    alias.some( a => {
+      if ( !a.router.active ) {
+        return false
+      }
+
+      if ( a.regexp.test( segment ) ) {
+        regexp = a.regexp
+        keys = a.keys
+        matched = a.router
+        return true
+      } else {
+        return false
+      }
+    } )
+
+    if ( !matched ) {
+      matched = match( segment )
+      regexp = matched && matched.regexp
+      keys = matched && matched.keys
+    }
 
     if ( !matched ) {
       return null
     }
 
-    const { options = {}, regexp, keys, traces } = matched
+    const { options = {}, traces } = matched
 
     // use best-matched router to match params,
     // regexp of standalone router is not accurate against full path

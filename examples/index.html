@@ -9,6 +9,8 @@
         <a href="#/app">app</a>
         <a href="#/app/detail/1">detail</a>
         <a href="#/app/search">search</a>
+        <a href="#/xyz">xyz</a>
+        <a href="#/abc/2">abc</a>
         <button onclick="push()">push</button>
       </div>
       <div>
@@ -88,6 +90,10 @@
         },
       } )
 
+      setTimeout(function () {
+        detail.alias( '/abc/:id' )
+      }, 2000)
+
       const search = router.create( {
         name: 'search',
         path: '/search',
@@ -117,6 +123,8 @@
           next();
         },
       } )
+
+      search.alias( '/xyz' )
 
       app.append( detail )
       app.append( search )
