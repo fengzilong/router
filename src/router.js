@@ -270,16 +270,22 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
   }
 
   // find by name
-  router.find = function ( fullName ) {
-    let found
+  router.find = function ( condition ) {
+    let results = []
 
-    this.recursive( ins => {
-      if ( ins.fullName === fullName ) {
-        found = ins
+    this.recursive( instance => {
+      if ( typeof condition === 'string' ) {
+        if ( instance.fullName === condition ) {
+          results.push( instance )
+        }
+      } else if ( typeof condition === 'function' ) {
+        if ( condition( instance ) === true ) {
+          results.push( instance )
+        }
       }
     } )
 
-    return found
+    return results[ 0 ]
   }
 
   // before parse segment, we can add new router dynamically here

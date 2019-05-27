@@ -144,6 +144,12 @@
       app.start()
       // app.stop()
 
+      const found = app.find( ins => {
+        return ins.options.path === '/app'
+      } )
+
+      console.log( 'found', found )
+
       function push() {
         app.replace( {
           name: 'app.search'
