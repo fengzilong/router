@@ -413,6 +413,14 @@ function createParse( candidates = [] ) {
   } )
 
   return function ( segment ) {
+    if ( typeof segment !== 'string' ) {
+      return null
+    }
+
+    if ( ~segment.indexOf( '?' ) ) {
+      segment = segment.split( '?' )[ 0 ]
+    }
+
     let matched
     let regexp
     let keys
