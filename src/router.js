@@ -146,6 +146,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
       from,
       to,
       params: to.params,
+      query: to.query,
     }
 
     const { ancestors, unmounts, mounts } = diff( from, to )
@@ -412,14 +413,14 @@ function createParse( candidates = [] ) {
     }
   } )
 
-  return function ( segment ) {
-    if ( typeof segment !== 'string' ) {
+  return function ( fullSegment ) {
+    if ( typeof fullSegment !== 'string' ) {
       return null
     }
 
-    if ( ~segment.indexOf( '?' ) ) {
-      segment = segment.split( '?' )[ 0 ]
-    }
+    const [ segment, querystring ] = fullSegment.split( '?' )
+
+    const query = qs.parse( querystring ) || {}
 
     let matched
     let regexp
@@ -465,6 +466,7 @@ function createParse( candidates = [] ) {
       segment,
       traces,
       params,
+      query,
       router: matched,
     }
   }
