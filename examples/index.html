@@ -14,10 +14,9 @@
         <button onclick="push()">push</button>
       </div>
       <div>
-        <button onclick="push2('/app')">app</button>
-        <a href="/app/detail/1">detail</a>
-        <a href="/app/search">search</a>
-        <button onclick="push()">push</button>
+        <button onclick="push('app')">app</button>
+        <button onclick="push2('app.detail', 1)">detail</button>
+        <button onclick="push('app.search')">search</button>
       </div>
     </div>
 
@@ -25,8 +24,8 @@
     <script type="text/javascript">
       const router = unfancyRouter( {
         debug: true,
-        // mode: 'history',
-        pathPrefix: '/app'
+        mode: 'history',
+        base: '/examples'
       } )
 
       // r.afterEach() {
@@ -150,14 +149,19 @@
 
       console.log( 'found', found )
 
-      function push() {
-        app.replace( {
-          name: 'app.search'
+      function push( name ) {
+        app.push( {
+          name
         } )
       }
 
-      function push2( path ) {
-        history.pushState( '', '', path )
+      function push2( name, id ) {
+        app.push( {
+          name,
+          params: {
+            id,
+          }
+        } )
       }
     </script>
   </body>

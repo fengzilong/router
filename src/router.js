@@ -10,10 +10,10 @@ import {
   requestUnmount, requestMount, mount, unmount, update
 } from './lifecycle'
 
-// implement { observe, unobserve, apply, isObserving, back, getSegment, push, replace }
+// implement { observe, unobserve, apply, isObserving, getSegment, push, replace }
 const modes = {
   hash,
-  // history,
+  history,
 }
 
 let counter = 0
@@ -209,8 +209,6 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
   }
 
   async function routeTo( route = '', fn ) {
-    const pathPrefix = this.globalOptions.pathPrefix || ''
-
     let path = '/'
 
     if ( route && ( typeof route === 'object' ) ) {
@@ -243,15 +241,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
         // check old segment match
         this.unobserve()
 
-        let finalPath = path
-
-        if ( this.globalOptions.mode === 'history' ) {
-          finalPath = removeTailingSlash( ensureLeadingSlash( pathPrefix ) ) +
-            '/' +
-            removeLeadingSlash( path )
-        }
-
-        fn( finalPath )
+        fn( path )
 
         this.observe()
       },
