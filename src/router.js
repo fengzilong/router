@@ -195,6 +195,17 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     return this.observer.isObserving()
   }
 
+  router.match = function () {
+    const segment = this.observer.getSegment()
+
+    if ( !this.parse ) {
+      console.warn( '[match] Router is not ready for parsing' )
+      return
+    }
+
+    return this.parse( segment )
+  }
+
   router.stop = function () {
     this.unobserve()
     this.recursive( function ( router ) {
