@@ -1,6 +1,6 @@
 {
   "name": "unfancy-router",
-  "version": "0.1.5-1",
+  "version": "0.1.5-2",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "unpkg": "dist/index.umd.js",
