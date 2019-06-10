@@ -6,13 +6,10 @@
   <body>
     <div id="app">
       <div>
-        <a href="#/app">app</a>
-        <a href="#/app/detail/1?foo=2">detail</a>
-        <a href="#/app/search?bar=1">search</a>
-        <a href="#/xyz">xyz</a>
-        <a href="#/abc/2">abc</a>
-        <button onclick="push()">push</button>
+        current mode: <span id="router-mode"></span> <button onclick="toggleMode()">switch mode</button>
       </div>
+
+
       <div>
         <button onclick="push('app')">app</button>
         <button onclick="push2('app.detail', 1)">detail</button>
@@ -22,11 +19,15 @@
 
     <script type="text/javascript" src="../dist/index.umd.js"></script>
     <script type="text/javascript">
+      let mode = 'history'
+
       const router = unfancyRouter( {
         debug: true,
-        mode: 'history',
+        mode,
         base: '/examples'
       } )
+
+      document.getElementById( 'router-mode' ).innerText = mode
 
       // r.afterEach() {
       //
@@ -142,6 +143,16 @@
 
       app.start()
       // app.stop()
+
+      function toggleMode() {
+        if ( mode === 'history' ) {
+          app.switchMode( 'hash' )
+          mode = 'hash'
+        } else {
+          app.switchMode( 'history' )
+          mode = 'history'
+        }
+      }
 
       const found = app.find( ins => {
         return ins.options.path === '/app'

@@ -67,6 +67,28 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     shouldRegenerateParse = false
   }
 
+  router.switchMode = function ( mode = 'hash', overrideOptions = {} ) {
+    let oldSegment = ''
+
+    if ( this.observer ) {
+      oldSegment = this.observer.getSegment()
+      this.unobserve()
+      // reset ( base exists history mode )
+      this.observer.replace( '/' )
+    }
+
+    this.observer = new modes[ mode ]( {
+      ...globalOptions,
+      ...overrideOptions,
+    } )
+
+    if ( oldSegment ) {
+      this.observer.replace( oldSegment )
+    }
+
+    this.observe()
+  }
+
   router.start = function () {
     const self = this
 
