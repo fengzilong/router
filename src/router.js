@@ -217,15 +217,37 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     return this.observer.isObserving()
   }
 
-  router.match = function () {
-    const segment = this.observer.getSegment()
+  router.match = function ( segment = '' ) {
+    // find root router
+    let root = this
 
-    if ( !this.parse ) {
+    while ( root ) {
+      if ( root.isRoot ) {
+        break
+      }
+      root = root.parent
+    }
+
+    if ( shouldRegenerateParse ) {
+      const candidates = []
+
+      // collect router and all sub-routers as candidates
+      root.recursive( function ( router ) {
+        candidates.push( router )
+      } )
+
+      root.parse = createParse( candidates )
+
+      shouldRegenerateParse = false
+    }
+
+
+    if ( !root.parse ) {
       console.warn( '[match] Router is not ready for parsing' )
       return
     }
 
-    return this.parse( segment )
+    return root.parse( segment || root.observer.getSegment() )
   }
 
   router.stop = function () {
@@ -236,8 +258,15 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
   }
 
   router._alias = []
-  router.alias = function ( path ) {
+  router.alias = function ( path = '' ) {
     shouldRegenerateParse = true
+
+    path = String( path )
+    path = path.replace( /^\/+/, '/' )
+    if ( path.charAt( 0 ) !== '/' ) {
+      path = '/' + path
+    }
+
     this._alias.push( path )
   }
 

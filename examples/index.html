@@ -144,6 +144,8 @@
       app.start()
       // app.stop()
 
+      console.log( 'match', search.match( '/xyz' ) )
+
       function toggleMode() {
         if ( mode === 'history' ) {
           app.switchMode( 'hash' )
