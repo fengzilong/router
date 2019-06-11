@@ -44,6 +44,31 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     _mark = _mark + 1
   }
 
+  router.regenerateParse = function ( { init = false } = {} ) {
+    let root = this
+
+    while ( root ) {
+      if ( root.isRoot ) {
+        break
+      }
+      root = root.parent
+    }
+
+    const candidates = []
+
+    // collect router and all sub-routers as candidates
+    root.recursive( function ( router ) {
+      if ( init ) {
+        router.init()
+      }
+      candidates.push( router )
+    } )
+
+    root.parse = createParse( candidates )
+
+    shouldRegenerateParse = false
+  }
+
   router.prepare = function () {
     const mode = globalOptions.mode || 'hash'
     this.observer = new modes[ mode ]( globalOptions )
@@ -53,18 +78,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     // boundary for stopping tracing
     this.isRoot = true
 
-    const candidates = []
-
-    // collect router and all sub-routers as candidates
-    this.recursive( function ( router ) {
-      router.init()
-      candidates.push( router )
-    } )
-
-    this.parse = createParse( candidates )
-
-    // reset
-    shouldRegenerateParse = false
+    this.regenerateParse( { init: true } )
   }
 
   router.switchMode = function ( mode = 'hash', overrideOptions = {} ) {
@@ -98,6 +112,8 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
 
     if ( !this.parse ) {
       this.prepare()
+    } else if ( shouldRegenerateParse ) {
+      this.regenerateParse( { init: true } )
     }
 
     this.observe()
@@ -138,14 +154,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
 
     // if change happens, create new parse
     if ( ( afterMark > beforeMark ) || shouldRegenerateParse ) {
-      const candidates = []
-
-      this.recursive( router => {
-        candidates.push( router )
-      } )
-
-      // regenerate parse
-      this.parse = createParse( candidates )
+      this.regenerateParse( { init: true } )
 
       // re-parse
       from = this.parse( oldSegment )
@@ -218,6 +227,10 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
   }
 
   router.match = function ( segment = '' ) {
+    if ( shouldRegenerateParse ) {
+      this.regenerateParse( { init: true } )
+    }
+
     // find root router
     let root = this
 
@@ -227,20 +240,6 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
       }
       root = root.parent
     }
-
-    if ( shouldRegenerateParse ) {
-      const candidates = []
-
-      // collect router and all sub-routers as candidates
-      root.recursive( function ( router ) {
-        candidates.push( router )
-      } )
-
-      root.parse = createParse( candidates )
-
-      shouldRegenerateParse = false
-    }
-
 
     if ( !root.parse ) {
       console.warn( '[match] Router is not ready for parsing' )
