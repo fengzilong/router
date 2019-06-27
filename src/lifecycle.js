@@ -104,7 +104,7 @@ async function unmount( targets = [], extra = {} ) {
 
 async function mount( targets = [], extra = {} ) {
   for ( const target of targets ) {
-    mountOne( target, extra )
+    await mountOne( target, extra )
   }
 }
 
@@ -129,7 +129,7 @@ async function mountOne( target, extra ) {
 async function update( targets = [], extra = {} ) {
   for ( const target of targets ) {
     // in most time, we want to execute the `enter` fn again when route update
-    mountOne( target, extra )
+    await mountOne( target, extra )
 
     if ( typeof target.options.update === 'function' ) {
       await target.options.update.call( target, {
