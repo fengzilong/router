@@ -104,8 +104,6 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
   }
 
   router.start = function () {
-    const self = this
-
     // stop old running routers
     running.forEach( r => r.stop() )
     running.push( router )
@@ -120,7 +118,11 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     this.apply()
   }
 
-  async function _observeCallback( { newSegment, oldSegment, inMemory, ifAllowed } ) {
+  async function _observeCallback( {
+    newSegment,
+    oldSegment,
+    ifAllowed
+  } ) {
     const beforeMark = _mark
 
     let from = this.parse( oldSegment )
@@ -285,7 +287,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
         path = target.toPath( params )
 
         if ( query ) {
-          path = path + '?' +qs.stringify( query )
+          path = path + '?' + qs.stringify( query )
         }
 
         path = ensureLeadingSlash( path )
@@ -297,7 +299,6 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     await this._observeCallback( {
       oldSegment: this.observer.getSegment(),
       newSegment: path,
-      inMemory: true,
       ifAllowed: () => {
         // check old segment match
         this.unobserve()
@@ -323,7 +324,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
 
   // find by name
   router.find = function ( condition ) {
-    let results = []
+    const results = []
 
     this.recursive( instance => {
       if ( typeof condition === 'string' ) {
@@ -487,9 +488,9 @@ function createParse( candidates = [] ) {
         keys = a.keys
         matched = a.router
         return true
-      } else {
-        return false
       }
+
+      return false
     } )
 
     if ( !matched ) {

@@ -59,12 +59,15 @@ export default class HTML5History {
 
   push( path ) {
     this.current = path
-    history.pushState( null, '', this.options.base + path )
+    // fix <base href> issue
+    const fullpath = location.origin + this.options.base + path
+    history.pushState( null, '', fullpath )
   }
 
   replace( path ) {
     this.current = path
-    history.replaceState( null, '', this.options.base + path )
+    const fullpath = location.origin + this.options.base + path
+    history.replaceState( null, '', fullpath )
   }
 }
 
