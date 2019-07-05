@@ -2,6 +2,8 @@ import dush from 'dush'
 import * as qs from 'query-string'
 import pathToRegexp from 'path-to-regexp'
 import { removeTailingSlash, ensureLeadingSlash, removeLeadingSlash } from './utils/slash'
+import removeHash from './utils/remove-hash'
+import isSameRoute from './utils/is-same-route'
 import hierarchy from './hierarchy'
 import hash from './mode/hash'
 import history from './mode/history'
@@ -127,6 +129,11 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
 
     let from = this.parse( oldSegment )
     let to = this.parse( newSegment )
+    
+    // all equals except hash
+    if ( isSameRoute( from, to ) ) {
+      return
+    }
 
     let rejectCount = this.beforeEachHooks.length
     const next = function ( result ) {
@@ -470,7 +477,10 @@ function createParse( candidates = [] ) {
       return null
     }
 
-    const [ segment, querystring ] = fullSegment.split( '?' )
+    let [ segment, querystring ] = fullSegment.split( '?' )
+    
+    segment = removeHash( segment )
+    querystring = removeHash( querystring )
 
     const query = qs.parse( querystring ) || {}
 
