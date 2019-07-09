@@ -129,7 +129,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
 
     let from = this.parse( oldSegment )
     let to = this.parse( newSegment )
-    
+
     // all equals except hash
     if ( isSameRoute( from, to ) ) {
       return
@@ -317,6 +317,10 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     } )
   }
 
+  router.getSegment = function ( url ) {
+    return this.observer.getSegment( url )
+  }
+
   router.push = function ( route ) {
     return routeTo.call( this, route, path => {
       this.observer.push( path )
@@ -478,7 +482,7 @@ function createParse( candidates = [] ) {
     }
 
     let [ segment, querystring ] = fullSegment.split( '?' )
-    
+
     segment = removeHash( segment )
     querystring = removeHash( querystring )
 

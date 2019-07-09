@@ -50,8 +50,8 @@ export default class HashHistory {
     }
   }
 
-  getSegment() {
-    return getHash()
+  getSegment( url ) {
+    return getHash( url )
   }
 
   push( hash ) {
