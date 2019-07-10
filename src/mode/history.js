@@ -1,5 +1,3 @@
-// wip
-
 export default class HTML5History {
   constructor( options = {} ) {
     this.options = options
@@ -15,21 +13,28 @@ export default class HTML5History {
       return
     }
 
-    this.listener = () => {
-      callback( {
-        oldSegment: this.current,
-        newSegment: this.getSegment(),
-      } )
+    if ( !this.listener ) {
+      this.listener = () => {
+        const newSegment = this.getSegment()
+        callback( {
+          oldSegment: this.current,
+          newSegment: newSegment,
+          ifAllowed: () => {
+            this.current = newSegment
+          }
+        } )
+      }
     }
 
     setTimeout( () => {
-      window.addEventListener( 'popstate', this.listener )
+      this.observing = true
+      window.addEventListener( 'popstate', this.listener, false )
     }, 0 )
   }
 
   unobserve() {
     this.observing = false
-    window.removeEventListener( 'popstate', this.listener )
+    window.removeEventListener( 'popstate', this.listener, false )
   }
 
   isObserving() {
