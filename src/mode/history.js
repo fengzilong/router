@@ -46,15 +46,27 @@ export default class HTML5History {
     } )
   }
 
-  getSegment() {
+  getSegment( url ) {
     const base = this.options.base
-    let pathname = decodeURIComponent( location.pathname )
+
+    let target = location
+
+    if ( url ) {
+      target = document.createElement( 'a' )
+      target.href = url
+    }
+
+    let pathname = decodeURIComponent( target.pathname )
 
     if ( pathname.indexOf( base ) === 0 ) {
       pathname = pathname.slice( base.length )
     }
 
-    return pathname + location.search + location.hash
+    const segment = pathname + target.search + target.hash
+
+    target = null
+
+    return segment
   }
 
   push( path ) {
