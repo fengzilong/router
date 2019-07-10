@@ -132,6 +132,10 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     
     // all equals except hash
     if ( isSameRoute( from, to ) ) {
+      if ( typeof ifAllowed === 'function' ) {
+        ifAllowed()
+      }
+
       return
     }
 
@@ -195,7 +199,7 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
       await requestUnmount( unmounts, extra ) &&
       await requestMount( mounts, extra )
     ) {
-      if ( ifAllowed ) {
+      if ( typeof ifAllowed === 'function' ) {
         await ifAllowed()
       }
       await unmount( unmounts, extra )
@@ -317,15 +321,23 @@ export default function createRouter( options = {}, globalOptions = {} ) { // es
     } )
   }
 
-  router.push = function ( route ) {
+  router.push = function ( route, callback ) {
     return routeTo.call( this, route, path => {
       this.observer.push( path )
+
+      if ( typeof callback === 'function' ) {
+        callback()
+      }
     } )
   }
 
-  router.replace = function ( route ) {
+  router.replace = function ( route, callback ) {
     return routeTo.call( this, route, path => {
       this.observer.replace( path )
+
+      if ( typeof callback === 'function' ) {
+        callback()
+      }
     } )
   }
 
